@@ -1,0 +1,35 @@
+{
+  "task_id": "V3-REPOSITORY-SEPARATION",
+  "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
+  "branch": "main",
+  "base_sha": "679cd7f27f32aa3dfb12dd20d6ce56661837ef8f",
+  "last_content_commit": "b131346268c26654f83238d6678f23fa39e92506",
+  "code_sha": null,
+  "kind": "docs",
+  "state": "unverified",
+  "source": {
+    "repository": "bnmhywb32-spec/BN-MAHYOUB-Android-V2",
+    "branch": "rebuild-v3",
+    "inherited_code_reference": "f1eea69e201d285bb0a676dcea323630b567bee1"
+  },
+  "acceptance": [
+    "تطابق الوثائق الأربع",
+    "دستور وتعليمات مستقلة",
+    "سجل استئناف واحد",
+    "عدم نقل كود V2"
+  ],
+  "checks": [
+    {
+      "name": "migration_content_equality",
+      "status": "pass",
+      "evidence": "مقارنة النصوص الأربعة المسترجعة من المستودعين؛ متطابقة جميعًا"
+    }
+  ],
+  "blockers": [
+    "المراجعة المستقلة للمستودع الجديد لم تنفذ",
+    "لا بناء أو اختبارات تطبيق ولا كود V3",
+    "لا فحص git diff --check محلي ولا بوابة آلية",
+    "المستودع عام؛ لا نشر كود V2 الخاص دون إذن"
+  ],
+  "next_step": "مراجعة مستقلة للدستور والوثائق والحالة، ثم CORE-005 قراءة فقط بعد معالجة الاعتراضات المانعة"
+}
