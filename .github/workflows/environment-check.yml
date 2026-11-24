@@ -1,0 +1,28 @@
+name: Free standard runner environment check
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect toolchain
+        run: |
+          java -version
+          command -v kotlinc || true
+          command -v flutter || true
+          echo "Android SDK: ${ANDROID_HOME:-not set}"
+          node --version
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - name: Inspect toolchain
+        shell: pwsh
+        run: |
+          java -version
+          Get-Command flutter,kotlinc -ErrorAction SilentlyContinue
+          node --version
+          Write-Host "Android SDK: $env:ANDROID_HOME"
