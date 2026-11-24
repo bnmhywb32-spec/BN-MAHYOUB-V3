@@ -1,32 +1,31 @@
 {
-  "task_id": "O13-FIRST-RELEASE-SCOPE",
+  "task_id": "PROOF-POLICIES",
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "main",
-  "base_sha": "760f636b95859598d58dabec4760b3123403e824",
-  "last_content_commit": "d274121073642b41cc7e0841e36e33769f9a111d",
+  "base_sha": "afd71fef1f009b95302e4ccc79a41a0b8c65fc0d",
+  "last_content_commit": "f3fce6a9c8318a61842e1d1ecc059ca504ff7b34",
   "code_sha": null,
   "kind": "docs",
   "state": "unverified",
   "acceptance": [
-    "توثيق الاتجاهات الستة ومصادر التفويض",
-    "إدراج المنصات الثلاث",
-    "تمييز أهداف القياس من النتائج"
+    "سياسات اختبار محدودة",
+    "مساران بمعايير موحدة",
+    "عدم اعتماد التقنية مسبقًا"
   ],
   "checks": [
     {
-      "name": "scope_readback",
+      "name": "policy_readback",
       "status": "pass"
     }
   ],
   "blockers": [
-    "لم يحفظ دليل الفحص التفصيلي في مخزن خاص دائم؛ الفحص بدأ قبل استيفاء هذا الشرط",
-    "اكتمال التسعير والنسخ الشامل غير متحقق",
-    "لا اختبارات تشغيل ولا جرد شامل",
-    "مراجعة نطاق الإصدار وتحديد ظروف القياس والسياسات السابقة للتجربة"
+    "مخزن أدلة CORE-005 الخاص غير مؤكد",
+    "مراجعة مستقلة للسياسات ونطاق الإصدار معلقة",
+    "بيئة بناء المنصات الثلاث غير متحققة"
   ],
-  "next_step": "استيفاء بوابة CORE-005 والسياسات اللازمة ثم تحديد مساري التجربة التقنية ومعاييرها",
+  "next_step": "معالجة شرط الأدلة والمراجعة والتحقق من بيئة البناء ثم تنفيذ الإثباتين",
   "changed_files": [
-    "docs/rebuild/FIRST-RELEASE.md",
+    "docs/rebuild/PROOF-POLICIES.md",
     "docs/engineering-state.json"
   ],
   "review": {
