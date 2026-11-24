@@ -1,45 +1,47 @@
 {
-  "task_id": "V3-REVIEW-CORRECTIONS-01",
+  "task_id": "V3-REVIEW-CORRECTIONS-02",
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "main",
-  "base_sha": "9e04318640b549602dc61a3566f9eaa226587864",
-  "last_content_commit": "eb2ed1b4f580e849aa5315a615692698bf70f80a",
+  "base_sha": "a3026557ad9bc81941e9fcf4bd6143a9ea4b9f04",
+  "last_content_commit": "789c78b1bf7ebbd9b222b9853abffdc2a9b00edb",
   "code_sha": null,
   "kind": "docs",
   "state": "unverified",
-  "source": {
-    "repository": "bnmhywb32-spec/BN-MAHYOUB-Android-V2",
-    "branch": "rebuild-v3",
-    "inherited_code_reference": "f1eea69e201d285bb0a676dcea323630b567bee1"
-  },
   "acceptance": [
-    "C1 فصل التفويض والاعتماد",
-    "C2 ملكية المحاسبة لقواعد الترحيل",
-    "H5 سجل الإرث",
-    "H7 أولوية المراجع",
-    "H8 حدود النشر العام",
-    "M1 مفردات الحالة"
+    "N1/N4 ملكية كتابة القيد وتبعية سياسة الترحيل",
+    "N2 إجراء الاعتماد",
+    "N3 شرط مخزن الأدلة الخاص",
+    "N5 صياغة المقترحات",
+    "N6 جدول المسائل",
+    "N7 دمج قواعد الترحيل في موضعها",
+    "N8 مقارنة الإثبات",
+    "N9 عدم تكرار مرجع V2 الخاص في الحالة العامة",
+    "H5 جدول الإرث مع عدم فرض قرارات غير مؤكدة"
   ],
   "checks": [
     {
       "name": "readback",
       "status": "pass",
-      "evidence": "استرجاع الملفات الستة المعدلة ومقارنة نص كل منها بالمحتوى المرسل؛ تطابق"
+      "evidence": "استرجاع الملفات الخمسة المعدلة ومطابقة النص المرسل لكل ملف"
     }
   ],
   "blockers": [
-    "مراجعة Claude للتصحيحات لم تنفذ",
-    "مصدر موافقات المالك ومصدر V1 لم يرفقا؛ لا تحقق مستقل منهما",
-    "لا فحص Git محلي ولا بناء أو اختبارات تطبيق"
+    "مخزن الأدلة الخاص لم يعتمده المالك ولم يتحقق الوصول إليه؛ يمنع بدء CORE-005",
+    "موافقات 001–003 الأصلية ومصادر قرارات V2 وV1 لم تتحقق؛ لا اعتماد نهائي لها",
+    "لا فحص Git محلي أو بناء أو اختبارات تطبيق؛ لا شفرة V3"
   ],
-  "next_step": "مراجعة Claude للتصحيحات الستة على main؛ لا CORE-005 قبل إغلاق الاعتراضات المانعة",
+  "next_step": "اختيار مخزن خاص دائم للأدلة بموافقة المالك والتحقق منه، ثم CORE-005 قراءة فقط وفق شروط المراجع. لا برمجة.",
   "changed_files": [
-    "docs/rebuild/DECISIONS.md",
     "docs/rebuild/CORE-DESIGN.md",
+    "docs/rebuild/DECISIONS.md",
+    "docs/rebuild/REFERENCE.md",
     "AGENTS.md",
     "docs/ENGINEERING-PLAYBOOK.md",
-    "docs/rebuild/START-HERE.md",
-    "docs/rebuild/REFERENCE.md",
     "docs/engineering-state.json"
-  ]
+  ],
+  "review": {
+    "reviewed_commit": "a3026557ad9bc81941e9fcf4bd6143a9ea4b9f04",
+    "source": "تقرير المراجع المستقل المقدم من المالك",
+    "result": "C2/H7/H8/M1 مغلقة؛ C1 مغلق بتحفظ؛ H5 جزئي؛ CORE-005 مشروط بمخزن أدلة خاص"
+  }
 }
