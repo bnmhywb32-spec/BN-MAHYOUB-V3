@@ -1,28 +1,110 @@
-name: Free standard runner environment check
+name: Build environment check
 on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: environment-check-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
-  linux:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+  android-web-linux:
+    name: Android and web toolchains (Linux)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - name: Inspect toolchain
+      - uses: actions/checkout@v7
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: current
+          cache-disabled: true
+          dependency-graph: false
+      - name: Set up Node.js for Kotlin web tooling
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+      - name: Set up Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: false
+      - name: Verify Android and web toolchains
+        shell: bash
         run: |
+          set -euo pipefail
+          flutter config --no-analytics --enable-web
           java -version
-          command -v kotlinc || true
-          command -v flutter || true
-          echo "Android SDK: ${ANDROID_HOME:-not set}"
+          gradle --version
           node --version
-  windows:
-    runs-on: windows-latest
-    timeout-minutes: 5
+          npm --version
+          flutter --version
+          dart --version
+          adb version
+          sdkmanager --list_installed
+          google-chrome --version
+          flutter doctor -v
+
+  android-windows:
+    name: Android and Windows toolchains (Windows)
+    runs-on: windows-2022
+    timeout-minutes: 30
     steps:
-      - name: Inspect toolchain
+      - uses: actions/checkout@v7
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          gradle-version: current
+          cache-disabled: true
+          dependency-graph: false
+      - name: Set up Node.js for Kotlin web tooling
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools platforms;android-36 build-tools;36.0.0'
+      - name: Set up Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: false
+      - name: Verify Windows desktop prerequisites
         shell: pwsh
         run: |
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (-not (Test-Path $vswhere)) { throw "Visual Studio Installer (vswhere) is missing." }
+          $vsPath = & $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Workload.NativeDesktop -property installationPath
+          if (-not $vsPath) { throw "Visual Studio C++ desktop workload is missing." }
+          Write-Host "Visual Studio: $vsPath"
+          cmake --version
           java -version
-          Get-Command flutter,kotlinc -ErrorAction SilentlyContinue
+          gradle --version
           node --version
-          Write-Host "Android SDK: $env:ANDROID_HOME"
+          npm --version
+          adb version
+          sdkmanager --list_installed
+          flutter config --no-analytics --enable-web --enable-windows-desktop
+          flutter --version
+          dart --version
+          flutter doctor -v
