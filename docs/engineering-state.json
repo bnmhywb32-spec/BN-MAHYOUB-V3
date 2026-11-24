@@ -1,9 +1,9 @@
 {
-  "task_id": "V3-REPOSITORY-SEPARATION",
+  "task_id": "V3-REVIEW-CORRECTIONS-01",
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "main",
-  "base_sha": "679cd7f27f32aa3dfb12dd20d6ce56661837ef8f",
-  "last_content_commit": "b131346268c26654f83238d6678f23fa39e92506",
+  "base_sha": "9e04318640b549602dc61a3566f9eaa226587864",
+  "last_content_commit": "eb2ed1b4f580e849aa5315a615692698bf70f80a",
   "code_sha": null,
   "kind": "docs",
   "state": "unverified",
@@ -13,23 +13,33 @@
     "inherited_code_reference": "f1eea69e201d285bb0a676dcea323630b567bee1"
   },
   "acceptance": [
-    "تطابق الوثائق الأربع",
-    "دستور وتعليمات مستقلة",
-    "سجل استئناف واحد",
-    "عدم نقل كود V2"
+    "C1 فصل التفويض والاعتماد",
+    "C2 ملكية المحاسبة لقواعد الترحيل",
+    "H5 سجل الإرث",
+    "H7 أولوية المراجع",
+    "H8 حدود النشر العام",
+    "M1 مفردات الحالة"
   ],
   "checks": [
     {
-      "name": "migration_content_equality",
+      "name": "readback",
       "status": "pass",
-      "evidence": "مقارنة النصوص الأربعة المسترجعة من المستودعين؛ متطابقة جميعًا"
+      "evidence": "استرجاع الملفات الستة المعدلة ومقارنة نص كل منها بالمحتوى المرسل؛ تطابق"
     }
   ],
   "blockers": [
-    "المراجعة المستقلة للمستودع الجديد لم تنفذ",
-    "لا بناء أو اختبارات تطبيق ولا كود V3",
-    "لا فحص git diff --check محلي ولا بوابة آلية",
-    "المستودع عام؛ لا نشر كود V2 الخاص دون إذن"
+    "مراجعة Claude للتصحيحات لم تنفذ",
+    "مصدر موافقات المالك ومصدر V1 لم يرفقا؛ لا تحقق مستقل منهما",
+    "لا فحص Git محلي ولا بناء أو اختبارات تطبيق"
   ],
-  "next_step": "مراجعة مستقلة للدستور والوثائق والحالة، ثم CORE-005 قراءة فقط بعد معالجة الاعتراضات المانعة"
+  "next_step": "مراجعة Claude للتصحيحات الستة على main؛ لا CORE-005 قبل إغلاق الاعتراضات المانعة",
+  "changed_files": [
+    "docs/rebuild/DECISIONS.md",
+    "docs/rebuild/CORE-DESIGN.md",
+    "AGENTS.md",
+    "docs/ENGINEERING-PLAYBOOK.md",
+    "docs/rebuild/START-HERE.md",
+    "docs/rebuild/REFERENCE.md",
+    "docs/engineering-state.json"
+  ]
 }
