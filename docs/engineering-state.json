@@ -1,35 +1,32 @@
 {
-  "task_id": "CORE-005",
+  "task_id": "O13-FIRST-RELEASE-SCOPE",
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "main",
-  "base_sha": "ab1612973f3d45fec950b93fd01562d48ab3f4e8",
-  "last_content_commit": "6977fa9a8c40bb3aac661066c43c47b88d817edc",
+  "base_sha": "760f636b95859598d58dabec4760b3123403e824",
+  "last_content_commit": "d274121073642b41cc7e0841e36e33769f9a111d",
   "code_sha": null,
   "kind": "docs",
   "state": "unverified",
   "acceptance": [
-    "خريطة قدرات عامة دون كشف تفاصيل خاصة",
-    "تمييز المرشحات من القرارات النهائية"
+    "توثيق الاتجاهات الستة ومصادر التفويض",
+    "إدراج المنصات الثلاث",
+    "تمييز أهداف القياس من النتائج"
   ],
   "checks": [
     {
-      "name": "static_sample_review",
-      "status": "pass",
-      "evidence": "قراءة عينات من خدمات الأعمال والتخزين والواجهة؛ الخلاصة في docs/rebuild/CORE-005.md"
-    },
-    {
-      "name": "map_readback",
+      "name": "scope_readback",
       "status": "pass"
     }
   ],
   "blockers": [
     "لم يحفظ دليل الفحص التفصيلي في مخزن خاص دائم؛ الفحص بدأ قبل استيفاء هذا الشرط",
     "اكتمال التسعير والنسخ الشامل غير متحقق",
-    "لا اختبارات تشغيل ولا جرد شامل"
+    "لا اختبارات تشغيل ولا جرد شامل",
+    "مراجعة نطاق الإصدار وتحديد ظروف القياس والسياسات السابقة للتجربة"
   ],
-  "next_step": "حسم كفاية الفحص وشرط الأدلة قبل إغلاق CORE-005 ثم تحديد نطاق الإصدار الأول",
+  "next_step": "استيفاء بوابة CORE-005 والسياسات اللازمة ثم تحديد مساري التجربة التقنية ومعاييرها",
   "changed_files": [
-    "docs/rebuild/CORE-005.md",
+    "docs/rebuild/FIRST-RELEASE.md",
     "docs/engineering-state.json"
   ],
   "review": {
