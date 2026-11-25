@@ -59,13 +59,13 @@ jobs:
           dart --version
           adb version
           sdk_packages="$(sdkmanager --list_installed)"
-          printf '%s\\n' "$sdk_packages"
+          printf '%s\n' "$sdk_packages"
           grep -Fq 'platform-tools' <<< "$sdk_packages"
           grep -Fq 'platforms;android-36' <<< "$sdk_packages"
           grep -Fq 'build-tools;36.0.0' <<< "$sdk_packages"
           google-chrome --version
           doctor_output="$(flutter doctor -v 2>&1)"
-          printf '%s\\n' "$doctor_output"
+          printf '%s\n' "$doctor_output"
           grep -Fq '[✓] Android toolchain - develop for Android devices' <<< "$doctor_output"
           grep -Fq '[✓] Chrome - develop for the web' <<< "$doctor_output"
 
@@ -73,6 +73,9 @@ jobs:
     name: Android and Windows toolchains (Windows)
     runs-on: windows-2022
     timeout-minutes: 30
+    env:
+      ANDROID_HOME: ${{ runner.temp }}/android-sdk
+      ANDROID_SDK_ROOT: ${{ runner.temp }}/android-sdk
     steps:
       - uses: actions/checkout@v7
       - name: Set up JDK 17
