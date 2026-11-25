@@ -1,13 +1,13 @@
 {
-  "task_id": "CORE-005-EVIDENCE-EXPANSION",
+  "task_id": "CORE-005-PRICING-BACKUP-REVIEW",
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "main",
   "base_sha": "488d236adff02a30ba2eb93ed61f0ee6c807b16b",
-  "last_content_commit": "ae790cff70bf0a78cb95a6902484a3ef555e808e",
+  "last_content_commit": "3a07cd9b810f09ef5db0a286e69aef1f8957275b",
   "code_sha": null,
   "kind": "audit",
   "state": "unverified",
-  "scope": "Read-only static V2 source inventory and sampled review at fixed private source commit; private evidence E01/E02, public capability map only; no V3 application implementation",
+  "scope": "Read-only targeted V2 review of pricing and ERP backup paths at fixed private source commit; private evidence E03; public findings only; no V3 application implementation",
   "acceptance": [
     "Verify private durable evidence store and readback",
     "Enumerate exact source tree at fixed V2 commit",
@@ -50,18 +50,25 @@
     {
       "name": "CORE005_independent_signoff",
       "status": "pending"
+    },
+    {
+      "name": "private_evidence_E03",
+      "status": "pass_limited",
+      "reference": "V3-CORE005-E03",
+      "issue_number": 7,
+      "comment_id": 7148732411,
+      "notes": "Retail prices and current-sale override supported; five-tier automatic pricing and complete ERP restore unverified; automatic ERP backup excluded in inspected configuration"
     }
   ],
   "blockers": [
-    "CORE-005 remains partial static audit; pricing rule coverage and full ERP backup/restore require scrutiny",
+    "CORE-005 remains partial: exhaustive pricing-flow coverage and complete backup/restore behavior are not verified; independent review pending",
     "Independent review of evidence, design approval and outstanding commercial policy gates before production",
     "No application source/build/tests in V3 yet; previously verified CI ran toolchain diagnostics only",
     "Main remains unprotected without required status checks"
   ],
-  "next_step": "Review pricing rule execution and full ERP backup/restore evidence in private V2, determine audit sufficiency, then independently review design and begin isolated equal-criteria proofs; no production engine launch yet",
+  "next_step": "Seek independent sufficiency review of private CORE-005 E01-E03 evidence; close audit only with explicit signoff, then proceed with isolated comparable KMP+Compose/Flutter proofs, not production code",
   "changed_files": [
     "docs/rebuild/CORE-005.md",
-    "docs/rebuild/PROOF-POLICIES.md",
     "docs/engineering-state.json"
   ],
   "related_review": {
