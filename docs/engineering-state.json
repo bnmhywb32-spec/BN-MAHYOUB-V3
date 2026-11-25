@@ -1,79 +1,76 @@
 {
-  "task_id": "CORE-005-PRICING-BACKUP-REVIEW",
+  "task_id": "TECH-007-ISOLATED-COMPARATIVE-PROOF",
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
-  "branch": "main",
-  "base_sha": "488d236adff02a30ba2eb93ed61f0ee6c807b16b",
-  "last_content_commit": "3a07cd9b810f09ef5db0a286e69aef1f8957275b",
-  "code_sha": null,
-  "kind": "audit",
+  "branch": "proof/isolated-technology-2026-11-25",
+  "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
+  "last_content_commit": "859dec12d44cde5f1e9122843585a84dc4a878de",
+  "code_sha": "859dec12d44cde5f1e9122843585a84dc4a878de",
+  "kind": "isolated_proof",
   "state": "unverified",
-  "scope": "Read-only targeted V2 review of pricing and ERP backup paths at fixed private source commit; private evidence E03; public findings only; no V3 application implementation",
+  "scope": "Independent reviewer authorized isolated equal-track Flutter/Dart vs Kotlin/KMP+Compose proof only; current Kotlin and Dart files are synthetic in-memory reference implementations, not durable/atomic SQLite or multiplatform app. CORE-005 remains partially open.",
   "acceptance": [
-    "Verify private durable evidence store and readback",
-    "Enumerate exact source tree at fixed V2 commit",
-    "Sample price, backup scope, returns, sync, and access without publishing private source",
-    "Do not close CORE-005 before independent review and unverified capability audit"
+    "Both tracks use identical synthetic sale, journal, access, replay, failure, concurrency and persistence fixtures",
+    "Real transactional local storage tested with rollback, concurrency and close/reopen on both tracks",
+    "Android, Windows and web build/run feasibility and exact precision verified separately",
+    "No V2 code reused, no production implementation, no service costs"
   ],
   "checks": [
     {
-      "name": "private_evidence_issue_readback",
-      "status": "pass",
-      "reference": "V3-CORE005-E01/E02",
-      "issue_number": 7,
-      "repository": "private V2"
+      "name": "independent_sufficiency_review",
+      "status": "approved_limited",
+      "source": "Owner-supplied review 2026-11-25",
+      "restriction": "Only isolated proof; CORE-005 not closed"
     },
     {
-      "name": "git_tree_inventory",
+      "name": "proof_branch_created",
       "status": "pass",
-      "fixed_source_ref": "f1eea69e201d285bb0a676dcea323630b567bee1",
-      "truncated": false,
-      "total_entries": 8116,
-      "app_source_files": 463
+      "branch": "proof/isolated-technology-2026-11-25"
     },
     {
-      "name": "sample_static_review",
-      "status": "pass_limited",
-      "notes": "Identified price-list and variant/unit price structures, distinct vault storage, sync services and return services; pricing rules, full backup and behavior unverified"
-    },
-    {
-      "name": "public_doc_readback",
-      "status": "pass",
-      "commits": [
-        "57b221208b08f0aa8a998ef40db4c5abb7dde13b",
-        "ae790cff70bf0a78cb95a6902484a3ef555e808e"
+      "name": "proof_reference_sources",
+      "status": "committed_not_verified",
+      "files": [
+        "proofs/kotlin/Reference.kt",
+        "proofs/flutter/reference.dart"
       ]
     },
     {
-      "name": "application_build",
-      "status": "not_run"
+      "name": "proof_reference_ci",
+      "status": "running_unverified",
+      "run_id": 45520893220,
+      "url": "https://github.com/bnmhywb32-spec/BN-MAHYOUB-V3/actions/runs/45520893220"
     },
     {
-      "name": "CORE005_independent_signoff",
+      "name": "real_database_transaction_reopen_concurrency",
+      "status": "not_implemented"
+    },
+    {
+      "name": "multiplatform_builds_and_ui",
+      "status": "not_implemented"
+    },
+    {
+      "name": "CORE005_final_signoff",
       "status": "pending"
-    },
-    {
-      "name": "private_evidence_E03",
-      "status": "pass_limited",
-      "reference": "V3-CORE005-E03",
-      "issue_number": 7,
-      "comment_id": 7148732411,
-      "notes": "Retail prices and current-sale override supported; five-tier automatic pricing and complete ERP restore unverified; automatic ERP backup excluded in inspected configuration"
     }
   ],
   "blockers": [
-    "CORE-005 remains partial: exhaustive pricing-flow coverage and complete backup/restore behavior are not verified; independent review pending",
-    "Independent review of evidence, design approval and outstanding commercial policy gates before production",
-    "No application source/build/tests in V3 yet; previously verified CI ran toolchain diagnostics only",
-    "Main remains unprotected without required status checks"
+    "Reference implementations are in-memory only; cannot prove atomic durable storage, concurrent processes or reopen",
+    "Flutter/KMP platform applications and comparable local relational adapters have not been created",
+    "CORE-005 pricing and full ERP backup/restore review remains partial; production forbidden",
+    "AGENTS.md has stale evidence-store sentence; reconcile on main before claiming docs consistent",
+    "Main protection/status checks not configured"
   ],
-  "next_step": "Seek independent sufficiency review of private CORE-005 E01-E03 evidence; close audit only with explicit signoff, then proceed with isolated comparable KMP+Compose/Flutter proofs, not production code",
+  "next_step": "Inspect reference CI results; fix failing assertions; implement comparable durable transaction/replay/rollback/reopen/concurrency proofs on isolated branch; keep CORE-005 partial and production blocked",
   "changed_files": [
-    "docs/rebuild/CORE-005.md",
+    "proofs/README.md",
+    "proofs/kotlin/Reference.kt",
+    "proofs/flutter/reference.dart",
+    ".github/workflows/proof-reference.yml",
     "docs/engineering-state.json"
   ],
   "related_review": {
-    "reviewed_commit": "a3026557ad9bc81941e9fcf4bd6143a9ea4b9f04",
-    "source": "تقرير المراجع المستقل المقدم من المالك",
-    "result": "C2/H7/H8/M1 مغلقة؛ C1 مغلق بتحفظ؛ H5 جزئي؛ CORE-005 مشروط بمخزن أدلة خاص"
+    "source": "Owner-supplied independent review, 2026-11-25",
+    "conclusion": "Permit isolated limited proofs now; CORE-005 5/10 and remains open; production not permitted",
+    "reviewed_commit": "6388fcd4f9050e98e5108d1551c0f481452563e8"
   }
 }
