@@ -3,11 +3,11 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "859dec12d44cde5f1e9122843585a84dc4a878de",
-  "code_sha": "859dec12d44cde5f1e9122843585a84dc4a878de",
+  "last_content_commit": "c5f1561345f82530d55d6bb170be7759009b89e8",
+  "code_sha": "c5f1561345f82530d55d6bb170be7759009b89e8",
   "kind": "isolated_proof",
   "state": "unverified",
-  "scope": "Independent reviewer authorized isolated equal-track Flutter/Dart vs Kotlin/KMP+Compose proof only; current Kotlin and Dart files are synthetic in-memory reference implementations, not durable/atomic SQLite or multiplatform app. CORE-005 remains partially open.",
+  "scope": "Isolated synthetic SQLite native JVM and Dart experiments; no production or platform approval",
   "acceptance": [
     "Both tracks use identical synthetic sale, journal, access, replay, failure, concurrency and persistence fixtures",
     "Real transactional local storage tested with rollback, concurrency and close/reopen on both tracks",
@@ -51,22 +51,31 @@
     {
       "name": "CORE005_final_signoff",
       "status": "pending"
+    },
+    {
+      "name": "reference_ci",
+      "status": "pass",
+      "run_id": 45520980135
+    },
+    {
+      "name": "durable_native_ci",
+      "status": "queued",
+      "run_id": 45521240917
     }
   ],
   "blockers": [
-    "Reference implementations are in-memory only; cannot prove atomic durable storage, concurrent processes or reopen",
-    "Flutter/KMP platform applications and comparable local relational adapters have not been created",
-    "CORE-005 pricing and full ERP backup/restore review remains partial; production forbidden",
-    "AGENTS.md has stale evidence-store sentence; reconcile on main before claiming docs consistent",
-    "Main protection/status checks not configured"
+    "Native SQLite tests pending; not a KMP or Flutter platform proof",
+    "Trusted identity, fractional quantities, full replay response and backup restoration not yet proven",
+    "CORE-005 partial; production prohibited",
+    "AGENTS stale evidence-store statement; main unprotected"
   ],
-  "next_step": "Inspect reference CI results; fix failing assertions; implement comparable durable transaction/replay/rollback/reopen/concurrency proofs on isolated branch; keep CORE-005 partial and production blocked",
+  "next_step": "Inspect native SQLite CI, correct failures, strengthen exact assertions and then prove platform adapters",
   "changed_files": [
-    "proofs/README.md",
-    "proofs/kotlin/Reference.kt",
-    "proofs/flutter/reference.dart",
-    ".github/workflows/proof-reference.yml",
-    "docs/engineering-state.json"
+    "proofs/schema.sql",
+    "proofs/kotlin/Durable.kt",
+    "proofs/flutter/durable.dart",
+    "proofs/flutter/pubspec.yaml",
+    ".github/workflows/proof-durable.yml"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
