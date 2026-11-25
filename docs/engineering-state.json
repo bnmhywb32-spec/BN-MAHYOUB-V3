@@ -81,14 +81,19 @@
       "name": "platform_build_smoke",
       "status": "in_progress",
       "run_id": 45521953968
+    },
+    {
+      "name": "platform_build_matrix_verified",
+      "status": "pass",
+      "run_id": 45522427620
     }
   ],
   "blockers": [
-    "Platform smoke builds pending; no actual platform runtime or SQLite adapter verification",
+    "Actual platform runtime storage adapters not implemented",
     "Trusted identity and full replay response not proven",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Inspect six platform build jobs; correct failures; then run actual platform storage and UI tests",
+  "next_step": "Implement and execute durable platform adapters against proofs/platform-runtime/contract.md",
   "changed_files": [
     "proofs/schema.sql",
     "proofs/kotlin/Durable.kt",
