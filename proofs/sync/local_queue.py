@@ -57,13 +57,26 @@ class Queue:
         return row[0] if row else 0
 
     def receive(self, rows):
+        # Requires a gap-free server stream; reject gaps until server is repaired.
         with self.db:
+            self.db.execute("BEGIN IMMEDIATE")
             last = self.revision()
             for row in rows:
                 rev = row["revision"]
-                if type(rev) is not int or rev <= last:
+                op = row["operation_id"]
+                body = json.dumps(row["payload"],sort_keys=True,separators=(',',':'),allow_nan=False)
+                if type(rev) is not int or rev < 1:
                     raise ValueError("SYNC_ORDER")
-                self.db.execute("INSERT INTO inbox VALUES(?,?,?,?)",(self.company,rev,row["operation_id"],json.dumps(row["payload"],sort_keys=True)))
+                if rev <= last:
+                    old = self.db.execute("SELECT id,payload FROM inbox WHERE company=? AND revision=?",(self.company,rev)).fetchone()
+                    if old is None or old[0] != op or json.dumps(json.loads(old[1]),sort_keys=True,separators=(',',':'),allow_nan=False) != body:
+                        raise ValueError("SYNC_REPLAY_CONFLICT")
+                    continue
+                if rev != last + 1:
+                    raise ValueError("SYNC_GAP")
+                if self.db.execute("SELECT 1 FROM inbox WHERE company=? AND id=?",(self.company,op)).fetchone():
+                    raise ValueError("SYNC_REPLAY_CONFLICT")
+                self.db.execute("INSERT INTO inbox VALUES(?,?,?,?)",(self.company,rev,op,body))
                 last = rev
             self.db.execute("INSERT INTO cursor VALUES(?,?) ON CONFLICT(company) DO UPDATE SET revision=excluded.revision",(self.company,last))
 
