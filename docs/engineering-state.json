@@ -1,50 +1,67 @@
 {
-  "task_id": "V3-INDEPENDENT-REVIEW-RECONCILIATION",
+  "task_id": "CORE-005-EVIDENCE-EXPANSION",
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "main",
-  "base_sha": "40285c1dd1beb1752a3c20d4ae0889310674da39",
-  "last_content_commit": "ac6436d0b30d5de0c4b484d7a2af34de5aba299f",
+  "base_sha": "488d236adff02a30ba2eb93ed61f0ee6c807b16b",
+  "last_content_commit": "ae790cff70bf0a78cb95a6902484a3ef555e808e",
   "code_sha": null,
-  "kind": "docs",
+  "kind": "audit",
   "state": "unverified",
-  "scope": "Review from Claude supplied by owner: reconcile first-release execution order and entrypoint only; no production source, no application build",
+  "scope": "Read-only static V2 source inventory and sampled review at fixed private source commit; private evidence E01/E02, public capability map only; no V3 application implementation",
   "acceptance": [
-    "توحيد تسلسل بوابات التصميم ثم الإثبات التقني ثم النواة الإنتاجية",
-    "منع توصيف فحص الأدوات كاختبارات تطبيق",
-    "فصل الإثبات الصغير عن الحزمة الإنتاجية"
+    "Verify private durable evidence store and readback",
+    "Enumerate exact source tree at fixed V2 commit",
+    "Sample price, backup scope, returns, sync, and access without publishing private source",
+    "Do not close CORE-005 before independent review and unverified capability audit"
   ],
   "checks": [
     {
-      "name": "first_release_readback",
+      "name": "private_evidence_issue_readback",
       "status": "pass",
-      "commit": "43ccd807547c8527c9d892796115436df34a0ce7"
+      "reference": "V3-CORE005-E01/E02",
+      "issue_number": 7,
+      "repository": "private V2"
     },
     {
-      "name": "start_here_commit",
+      "name": "git_tree_inventory",
       "status": "pass",
-      "commit": "ac6436d0b30d5de0c4b484d7a2af34de5aba299f"
+      "fixed_source_ref": "f1eea69e201d285bb0a676dcea323630b567bee1",
+      "truncated": false,
+      "total_entries": 8116,
+      "app_source_files": 463
+    },
+    {
+      "name": "sample_static_review",
+      "status": "pass_limited",
+      "notes": "Identified price-list and variant/unit price structures, distinct vault storage, sync services and return services; pricing rules, full backup and behavior unverified"
+    },
+    {
+      "name": "public_doc_readback",
+      "status": "pass",
+      "commits": [
+        "57b221208b08f0aa8a998ef40db4c5abb7dde13b",
+        "ae790cff70bf0a78cb95a6902484a3ef555e808e"
+      ]
     },
     {
       "name": "application_build",
       "status": "not_run"
     },
     {
-      "name": "independent_review",
-      "status": "received",
-      "source": "User-provided Claude review 2026-11-25",
-      "result": "Production readiness 5/10, package order 6/10; recommended small integrated proof"
+      "name": "CORE005_independent_signoff",
+      "status": "pending"
     }
   ],
   "blockers": [
-    "CORE-005 private evidence store not confirmed; partial read-only scan cannot be treated as closed",
-    "Further design/policy approval needed for production behaviors; proof policy not a commercial decision",
-    "No V3 application code or actual application builds/tests; CI checks toolchain only",
-    "main unprotected and without mandatory checks"
+    "CORE-005 remains partial static audit; pricing rule coverage and full ERP backup/restore require scrutiny",
+    "Independent review of evidence, design approval and outstanding commercial policy gates before production",
+    "No application source/build/tests in V3 yet; previously verified CI ran toolchain diagnostics only",
+    "Main remains unprotected without required status checks"
   ],
-  "next_step": "Resolve CORE-005 private evidence gate and independent design objections before isolated comparative proof, without creating eight generic engines",
+  "next_step": "Review pricing rule execution and full ERP backup/restore evidence in private V2, determine audit sufficiency, then independently review design and begin isolated equal-criteria proofs; no production engine launch yet",
   "changed_files": [
-    "docs/rebuild/FIRST-RELEASE.md",
-    "docs/rebuild/START-HERE.md",
+    "docs/rebuild/CORE-005.md",
+    "docs/rebuild/PROOF-POLICIES.md",
     "docs/engineering-state.json"
   ],
   "related_review": {
