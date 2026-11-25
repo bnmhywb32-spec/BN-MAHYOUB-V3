@@ -1,0 +1,43 @@
+name: Isolated proof reference checks
+on:
+  push:
+    branches:
+      - 'proof/**'
+    paths:
+      - 'proofs/**'
+      - '.github/workflows/proof-reference.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  kotlin-reference:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install Kotlin compiler through SDKMAN
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -s "https://get.sdkman.io" | bash
+          source "$HOME/.sdkman/bin/sdkman-init.sh"
+          sdk install kotlin 2.1.20
+          kotlinc -version
+          kotlinc proofs/kotlin/Reference.kt -include-runtime -d /tmp/v3-reference.jar
+          java -jar /tmp/v3-reference.jar
+  dart-reference:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: false
+      - name: Execute Dart reference checks
+        run: dart --enable-asserts run proofs/flutter/reference.dart
