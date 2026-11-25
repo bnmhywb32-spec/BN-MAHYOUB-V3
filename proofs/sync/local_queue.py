@@ -10,6 +10,7 @@ class Queue:
         self.db.executescript("""
         CREATE TABLE IF NOT EXISTS pending(company TEXT, id TEXT, payload TEXT,
           PRIMARY KEY(company,id));
+        CREATE TABLE IF NOT EXISTS receipts(company TEXT NOT NULL, id TEXT NOT NULL, payload TEXT NOT NULL, response TEXT NOT NULL, PRIMARY KEY(company,id));
         CREATE TABLE IF NOT EXISTS inbox(company TEXT, revision INTEGER, id TEXT,
           payload TEXT, PRIMARY KEY(company,revision), UNIQUE(company,id));
         CREATE TABLE IF NOT EXISTS cursor(company TEXT PRIMARY KEY, revision INTEGER);
@@ -19,6 +20,12 @@ class Queue:
         op = operation_id or str(uuid.uuid4())
         body = json.dumps(payload, sort_keys=True, separators=(',',':'), allow_nan=False)
         with self.db:
+            self.db.execute("BEGIN IMMEDIATE")
+            receipt = self.db.execute("SELECT payload FROM receipts WHERE company=? AND id=?",(self.company,op)).fetchone()
+            if receipt:
+                if receipt[0] != body:
+                    raise ValueError("SYNC_CONFLICT")
+                return op
             self.db.execute("INSERT OR IGNORE INTO pending VALUES(?,?,?)",(self.company,op,body))
             old = self.db.execute("SELECT payload FROM pending WHERE company=? AND id=?",(self.company,op)).fetchone()
             if old[0] != body:
@@ -30,11 +37,19 @@ class Queue:
 
     def acknowledge(self, operation_id, response):
         with self.db:
+            self.db.execute("BEGIN IMMEDIATE")
+            encoded = json.dumps(response,sort_keys=True,separators=(',',':'),allow_nan=False)
+            prior = self.db.execute("SELECT response FROM receipts WHERE company=? AND id=?",(self.company,operation_id)).fetchone()
+            if prior:
+                if prior[0] != encoded:
+                    raise ValueError("SYNC_ACK_MISMATCH")
+                return
             row = self.db.execute("SELECT payload FROM pending WHERE company=? AND id=?",(self.company,operation_id)).fetchone()
             if row is None:
-                return
-            if response.get("operation_id") != operation_id or response.get("payload") != json.loads(row[0]):
+                raise ValueError("SYNC_UNKNOWN_OPERATION")
+            if response.get("operation_id") != operation_id or json.dumps(response.get("payload"),sort_keys=True,separators=(',',':'),allow_nan=False) != row[0] or not isinstance(response.get("received_at"),str) or not response["received_at"]:
                 raise ValueError("SYNC_ACK_MISMATCH")
+            self.db.execute("INSERT INTO receipts VALUES(?,?,?,?)",(self.company,operation_id,row[0],encoded))
             self.db.execute("DELETE FROM pending WHERE company=? AND id=?",(self.company,operation_id))
 
     def revision(self):
