@@ -1,96 +1,50 @@
 {
-  "task_id": "BUILD-ENVIRONMENT",
+  "task_id": "V3-INDEPENDENT-REVIEW-RECONCILIATION",
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "main",
-  "base_sha": "f28cbe03975647157bbfdb8d31f8c75a02707c0f",
-  "last_content_commit": "7a64711b411a6c9c1a03d94f1b81f118325c885a",
+  "base_sha": "40285c1dd1beb1752a3c20d4ae0889310674da39",
+  "last_content_commit": "ac6436d0b30d5de0c4b484d7a2af34de5aba299f",
   "code_sha": null,
-  "kind": "ci",
-  "state": "verified",
-  "scope": "تهيئة وفحص أدوات CI فقط. لا يتضمن بناء تطبيق V3 أو اعتماد Kotlin Multiplatform أو Flutter كتقنية نهائية.",
+  "kind": "docs",
+  "state": "unverified",
+  "scope": "Review from Claude supplied by owner: reconcile first-release execution order and entrypoint only; no production source, no application build",
   "acceptance": [
-    "تبدأ فحوص الأدوات تلقائيًا عند دفع تغييرات غير توثيقية إلى main، مع بقاء التشغيل اليدوي متاحًا.",
-    "تهيئة Java 17 وGradle وNode وAndroid SDK وFlutter على runner Linux وWindows.",
-    "إثبات فحوص Android وWeb، وإثبات متطلبات Windows desktop على Windows.",
-    "استخدام runners قياسية للمستودع العام، مع تعطيل cache وعدم النشر أو رفع artifacts."
+    "توحيد تسلسل بوابات التصميم ثم الإثبات التقني ثم النواة الإنتاجية",
+    "منع توصيف فحص الأدوات كاختبارات تطبيق",
+    "فصل الإثبات الصغير عن الحزمة الإنتاجية"
   ],
   "checks": [
     {
-      "name": "environment_check_final",
+      "name": "first_release_readback",
       "status": "pass",
-      "run_id": 45515711224,
-      "run_url": "https://github.com/bnmhywb32-spec/BN-MAHYOUB-V3/actions/runs/45515711224",
-      "event": "push",
-      "commit": "7a64711b411a6c9c1a03d94f1b81f118325c885a",
-      "jobs": [
-        {
-          "name": "Android and web toolchains (Linux)",
-          "status": "pass",
-          "job_id": 138874471890
-        },
-        {
-          "name": "Android and Windows toolchains (Windows)",
-          "status": "pass",
-          "job_id": 138874472318
-        }
-      ],
-      "versions": {
-        "java": "Temurin 17.0.21+9",
-        "gradle": "9.9.2",
-        "node": "22.23.5",
-        "flutter": "3.50.1 stable",
-        "dart": "3.14.0",
-        "android_sdk_packages": "platform-tools, platforms;android-36, build-tools;36.0.0",
-        "linux_web_browser": "Google Chrome 157.0.8103.78",
-        "windows_visual_studio": "Enterprise 2022 17.14.45"
-      },
-      "observations": [
-        "Linux: Flutter doctor passed Android and Chrome/Web checks.",
-        "Windows: Flutter doctor passed Android, Chrome/Web, and Visual Studio checks.",
-        "Runner images already contained additional Android SDK packages; Flutter doctor reported SDK 37.0.0 while the workflow explicitly installs API 36 and Build Tools 36.0.0. The application compile SDK remains undecided."
-      ]
+      "commit": "43ccd807547c8527c9d892796115436df34a0ce7"
     },
     {
-      "name": "automatic_chatgpt_push_trigger",
+      "name": "start_here_commit",
       "status": "pass",
-      "evidence": "A GitHub API commit from this session created a push run without owner intervention."
+      "commit": "ac6436d0b30d5de0c4b484d7a2af34de5aba299f"
     },
     {
-      "name": "initial_attempt",
-      "status": "failed_then_fixed",
-      "run_id": 45514530614,
-      "reason": "Gradle setup rejected dependency-graph=false; changed to dependency-graph=disabled."
+      "name": "application_build",
+      "status": "not_run"
     },
     {
-      "name": "invalid_runner_context_attempts",
-      "status": "failed_then_fixed",
-      "run_ids": [
-        45515367010,
-        45515438194
-      ],
-      "reason": "Runner context was invalid in job-level environment declarations, so GitHub created no jobs; those declarations were removed."
-    },
-    {
-      "name": "application_build_and_tests",
-      "status": "not_run",
-      "reason": "المستودع لا يحتوي مشروع تطبيق أو مصدر بناء؛ التشغيل يثبت الأدوات وفحوص Flutter doctor فقط، ولا يثبت build فعليًا لمساري KMP أو Flutter."
-    },
-    {
-      "name": "repository_actions_settings",
-      "status": "partially_inspected",
-      "evidence": "The branch API reports main unprotected with no required checks. GitHub connector rejected the repository Actions permission/settings endpoints. The successful push run proves Actions is enabled and can run; workflow token scope is contents:read."
+      "name": "independent_review",
+      "status": "received",
+      "source": "User-provided Claude review 2026-11-25",
+      "result": "Production readiness 5/10, package order 6/10; recommended small integrated proof"
     }
   ],
   "blockers": [
-    "لا يوجد مشروع تطبيق أو اختبارات V3 لتشغيل build فعلي للمسارين على Android وWindows وWeb.",
-    "نسخ أدوات الإثبات يجب تثبيتها ضمن بروتوكول CORE-007؛ التشغيل الحالي يستخدم Gradle current وFlutter stable وقت التشغيل.",
-    "حالة CORE-005 ما زالت مشروطة بتأكيد مخزن الأدلة الخاص، ومراجعة السياسات ونطاق الإصدار معلقة.",
-    "main غير محمي ولا توجد required status checks؛ التشغيل الحالي تقريري ولا يمنع دفع تغيير يفشل.",
-    "إعدادات Actions على مستوى المستودع لم يمكن قراءتها عبر GitHub connector؛ المؤكد هو صلاحية workflow الحالية وتشغيلها الفعلي."
+    "CORE-005 private evidence store not confirmed; partial read-only scan cannot be treated as closed",
+    "Further design/policy approval needed for production behaviors; proof policy not a commercial decision",
+    "No V3 application code or actual application builds/tests; CI checks toolchain only",
+    "main unprotected and without mandatory checks"
   ],
-  "next_step": "بعد استيفاء بوابات CORE-005 ومراجعة سياسة الإثبات، أنشئ إثباتين معزولين بإصدارات وأهداف Android SDK مثبتة، ثم أضف build/test فعليًا للمسارات والمنصات الثلاث. لا يعتبر هذا التشغيل اختيارًا تقنيًا أو برمجة إنتاج.",
+  "next_step": "Resolve CORE-005 private evidence gate and independent design objections before isolated comparative proof, without creating eight generic engines",
   "changed_files": [
-    ".github/workflows/environment-check.yml",
+    "docs/rebuild/FIRST-RELEASE.md",
+    "docs/rebuild/START-HERE.md",
     "docs/engineering-state.json"
   ],
   "related_review": {
