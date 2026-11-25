@@ -23,7 +23,7 @@ jobs:
       - name: Install Kotlin compiler through SDKMAN
         shell: bash
         run: |
-          set -euo pipefail
+          set -eo pipefail
           curl -s "https://get.sdkman.io" | bash
           source "$HOME/.sdkman/bin/sdkman-init.sh"
           sdk install kotlin 2.1.20
