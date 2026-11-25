@@ -5,7 +5,7 @@ class Ledger(val path:String) {
  fun connect()=DriverManager.getConnection("jdbc:sqlite:"+path).also { c -> c.createStatement().use { it.execute("PRAGMA busy_timeout=10000") } }
  fun init(){connect().use { c -> Files.readString(java.nio.file.Path.of("proofs/schema.sql")).split(';').filter{it.isNotBlank()}.forEach { s -> c.createStatement().use{it.execute(s)} } }}
  fun sell(id:String, qty:Long, company:String="A", actor:String="cashier-A", fail:Boolean=false):Long {
- require(company=="A" && actor=="cashier-A" && qty>0 && qty%1000==0L)
+ require(company=="A" && actor=="cashier-A" && qty>0)
  connect().use { c ->
  fun exec(s:String,vararg a:Any):Int=c.prepareStatement(s).use{p->a.forEachIndexed{i,v->p.setObject(i+1,v)};p.executeUpdate()}
  fun tx(s:String)=c.createStatement().use{it.execute(s)}
@@ -18,7 +18,7 @@ class Ledger(val path:String) {
  val remaining=c.createStatement().use{it.executeQuery("SELECT qty FROM stock WHERE company='A' AND branch='A1'").use{r->r.next();r.getLong(1)}}
  val doc=java.util.UUID.randomUUID().toString()
  exec("INSERT INTO documents VALUES(?,?)",doc,qty)
- val rev=qty/1000*100;val cost=qty/1000*60
+ val rev=Math.addExact(Math.multiplyExact(qty,100L),500L)/1000;val cost=Math.addExact(Math.multiplyExact(qty,60L),500L)/1000
  for((account,d,cr) in listOf(Triple("cash",rev,0L),Triple("revenue",0L,rev),Triple("cogs",cost,0L),Triple("inventory",0L,cost)))exec("INSERT INTO journal VALUES(?,?,?,?)",doc,account,d,cr)
  exec("INSERT INTO commands VALUES(?,?,?,?)",id,fp,doc,remaining)
  exec("INSERT INTO outbox VALUES(?)",id)
@@ -44,5 +44,15 @@ fun main(){
  check(l.scalar("SELECT qty FROM stock WHERE company='B'")==10000L)
  check(l.scalar("SELECT sum(debit-credit) FROM journal")==0L)
  for(t in listOf("documents","commands","outbox"))check(l.scalar("SELECT count(*) FROM "+t)==2L)
- println("SQLite JVM durable checks PASS")
+ val backup=Files.createTempFile("proof-backup",".db").toString()
+ l.connect().use{c->c.prepareStatement("VACUUM INTO ?").use{it.setString(1,backup);it.execute()}}
+ val restored=Ledger(backup)
+ check(restored.sell("one",2000)==8000L)
+ check(restored.scalar("SELECT qty FROM stock WHERE company='A'")==0L)
+ check(restored.scalar("SELECT count(*) FROM documents")==2L)
+ val q=Ledger(Files.createTempFile("fraction",".db").toString());q.init()
+ check(q.sell("fraction",125)==9875L)
+ check(q.scalar("SELECT debit FROM journal WHERE account='cash'")==13L)
+ check(q.scalar("SELECT debit FROM journal WHERE account='cogs'")==8L)
+ println("SQLite JVM durable, fractional rounding and backup checks PASS")
 }
