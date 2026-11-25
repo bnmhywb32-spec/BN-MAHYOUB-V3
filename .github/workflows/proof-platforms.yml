@@ -118,6 +118,6 @@ jobs:
           EOF
           mkdir -p src/wasmJsMain/resources
           echo '<html><body><script src="platform-proof.js"></script></body></html>' > src/wasmJsMain/resources/index.html
-          echo 'android.useAndroidX=true' > gradle.properties
+          printf '%s\n' 'android.useAndroidX=true' 'org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=768m' 'kotlin.daemon.jvmargs=-Xmx4g' 'org.gradle.workers.max=2' > gradle.properties
       - working-directory: platform_proof
         run: gradle ${{ matrix.task }} --no-daemon --stacktrace
