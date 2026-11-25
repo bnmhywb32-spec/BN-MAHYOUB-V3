@@ -4,7 +4,7 @@ import 'package:sqlite3/sqlite3.dart';
 void require(bool ok){if(!ok)throw StateError('check failed');}
 Database open(String p)=>sqlite3.open(p)..execute('PRAGMA busy_timeout=10000');
 int sell(String p,String id,int qty,{String company='A',String actor='cashier-A',bool fail=false}){
- require(company=='A' && actor=='cashier-A' && qty>0 && qty%1000==0);
+ require(company=='A' && actor=='cashier-A' && qty>0);
  final db=open(p);
  try{
  db.execute('BEGIN IMMEDIATE');
@@ -17,7 +17,7 @@ int sell(String p,String id,int qty,{String company='A',String actor='cashier-A'
  final remaining=db.select("SELECT qty FROM stock WHERE company='A'").first['qty'] as int;
  final doc='DOC-$id';
  db.execute('INSERT INTO documents VALUES(?,?)',[doc,qty]);
- final rev=qty~/1000*100,cost=qty~/1000*60;
+ final rev=(qty*100+500)~/1000,cost=(qty*60+500)~/1000;
  for(final row in [['cash',rev,0],['revenue',0,rev],['cogs',cost,0],['inventory',0,cost]]){db.execute('INSERT INTO journal VALUES(?,?,?,?)',[doc,...row]);}
  db.execute('INSERT INTO commands VALUES(?,?,?,?)',[id,fp,doc,remaining]);
  db.execute('INSERT INTO outbox VALUES(?)',[id]);
@@ -45,5 +45,15 @@ Future<void> main()async{
  require(scalar(p,"SELECT qty FROM stock WHERE company='B'")==10000);
  require(scalar(p,'SELECT sum(debit-credit) FROM journal')==0);
  for(final t in ['documents','commands','outbox']){require(scalar(p,'SELECT count(*) FROM $t')==2);}
- dir.deleteSync(recursive:true);print('SQLite Dart native durable checks PASS');
+ final backup='${dir.path}/backup.db';
+ final source=open(p);source.execute('VACUUM INTO ?',[backup]);source.dispose();
+ require(sell(backup,'one',2000)==8000);
+ require(scalar(backup,"SELECT qty FROM stock WHERE company='A'")==0);
+ require(scalar(backup,'SELECT count(*) FROM documents')==2);
+ final fraction='${dir.path}/fraction.db';
+ final f=open(fraction);for(final s in File('../schema.sql').readAsStringSync().split(';')){if(s.trim().isNotEmpty)f.execute(s);}f.dispose();
+ require(sell(fraction,'fraction',125)==9875);
+ require(scalar(fraction,"SELECT debit FROM journal WHERE account='cash'")==13);
+ require(scalar(fraction,"SELECT debit FROM journal WHERE account='cogs'")==8);
+ dir.deleteSync(recursive:true);print('SQLite Dart native durable, fractional rounding and backup checks PASS');
 }
