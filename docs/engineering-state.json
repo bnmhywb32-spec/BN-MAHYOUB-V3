@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "c5f1561345f82530d55d6bb170be7759009b89e8",
-  "code_sha": "c5f1561345f82530d55d6bb170be7759009b89e8",
+  "last_content_commit": "4c63f1ad06582da5ea02b7c06f42bce661a24552",
+  "code_sha": "4c63f1ad06582da5ea02b7c06f42bce661a24552",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Isolated synthetic SQLite native JVM and Dart experiments; no production or platform approval",
@@ -61,15 +61,25 @@
       "name": "durable_native_ci",
       "status": "queued",
       "run_id": 45521240917
+    },
+    {
+      "name": "durable_native_baseline",
+      "status": "pass",
+      "run_id": 45521240917
+    },
+    {
+      "name": "fractional_backup_native",
+      "status": "in_progress",
+      "run_id": 45521513367
     }
   ],
   "blockers": [
-    "Native SQLite tests pending; not a KMP or Flutter platform proof",
-    "Trusted identity, fractional quantities, full replay response and backup restoration not yet proven",
-    "CORE-005 partial; production prohibited",
-    "AGENTS stale evidence-store statement; main unprotected"
+    "Fractional and backup tests awaiting verification",
+    "Native only; Android Windows web adapters not proven",
+    "Trusted identity and complete replay response not proven",
+    "CORE-005 partial; production prohibited; AGENTS stale statement and main unprotected"
   ],
-  "next_step": "Inspect native SQLite CI, correct failures, strengthen exact assertions and then prove platform adapters",
+  "next_step": "Verify fractional and backup CI; then platform adapters and trusted context",
   "changed_files": [
     "proofs/schema.sql",
     "proofs/kotlin/Durable.kt",
