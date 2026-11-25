@@ -1,0 +1,3 @@
+# Platform runtime acceptance
+
+Use synthetic data only. Each Android, Windows and browser adapter must execute the same durable transaction: initial stock 10, sell 2 at 100 with cost 60, stock 8, revenue 200, cost 120. Verify balanced journal, duplicate command replay, changed payload rejection, injected failure rollback, restart persistence, and company isolation. A browser must additionally prove persistent storage after reload and exact integer arithmetic. Build success is not runtime success. Record platform, storage adapter, version, actual execution logs and failures independently. No production approval or technology selection follows from a partial result.
