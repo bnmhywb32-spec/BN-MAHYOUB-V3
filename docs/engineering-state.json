@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "4c63f1ad06582da5ea02b7c06f42bce661a24552",
-  "code_sha": "4c63f1ad06582da5ea02b7c06f42bce661a24552",
+  "last_content_commit": "ef10213052c22384c4d400b5b9de9398669bef00",
+  "code_sha": "ef10213052c22384c4d400b5b9de9398669bef00",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Isolated synthetic SQLite native JVM and Dart experiments; no production or platform approval",
@@ -71,15 +71,24 @@
       "name": "fractional_backup_native",
       "status": "in_progress",
       "run_id": 45521513367
+    },
+    {
+      "name": "fractional_backup_native_verified",
+      "status": "pass",
+      "run_id": 45521513367
+    },
+    {
+      "name": "platform_build_smoke",
+      "status": "in_progress",
+      "run_id": 45521953968
     }
   ],
   "blockers": [
-    "Fractional and backup tests awaiting verification",
-    "Native only; Android Windows web adapters not proven",
-    "Trusted identity and complete replay response not proven",
-    "CORE-005 partial; production prohibited; AGENTS stale statement and main unprotected"
+    "Platform smoke builds pending; no actual platform runtime or SQLite adapter verification",
+    "Trusted identity and full replay response not proven",
+    "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify fractional and backup CI; then platform adapters and trusted context",
+  "next_step": "Inspect six platform build jobs; correct failures; then run actual platform storage and UI tests",
   "changed_files": [
     "proofs/schema.sql",
     "proofs/kotlin/Durable.kt",
