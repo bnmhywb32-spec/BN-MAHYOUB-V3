@@ -1,0 +1,93 @@
+name: Platform SQLite runtime
+on:
+  push:
+    branches: ['proof/**']
+    paths:
+      - 'proofs/platform-runtime/**'
+      - '.github/workflows/proof-runtime.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  flutter:
+    if: startsWith(github.ref, 'refs/heads/proof/')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: web
+          - os: ubuntu-24.04
+            target: android
+          - os: windows-2022
+            target: windows
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.8'
+      - run: |
+          flutter config --no-analytics
+          flutter create --project-name platform_proof --platforms=android,web,windows runtime_app
+          cp proofs/platform-runtime/flutter_main.dart runtime_app/lib/main.dart
+          cp -r proofs/platform-runtime/{integration_test,test_driver} runtime_app
+          cd runtime_app
+          flutter pub add 'sqflite:2.4.1' 'sqflite_common:2.5.5' 'sqflite_common_ffi:2.3.4+4' 'sqflite_common_ffi_web:0.4.5+4' 'dev:integration_test:{"sdk":"flutter"}'
+          flutter analyze lib integration_test test_driver
+      - if: matrix.target == 'windows'
+        working-directory: runtime_app
+        run: flutter test integration_test/durable_test.dart -d windows
+      - if: matrix.target == 'android'
+        uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          script: cd runtime_app && flutter test integration_test/durable_test.dart -d emulator-5554
+      - if: matrix.target == 'web'
+        working-directory: runtime_app
+        run: |
+          dart run sqflite_common_ffi_web:setup
+          chromedriver --port=4444 > "${RUNNER_TEMP}/chromedriver.log" 2>&1 &
+          driver_pid=$!
+          trap 'kill "$driver_pid" 2>/dev/null || true; cat "${RUNNER_TEMP}/chromedriver.log"' EXIT
+          for attempt in {1..15}; do
+            if curl -fsS http://localhost:4444/status >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS http://localhost:4444/status >/dev/null
+          flutter drive --driver=test_driver/integration_test.dart --target=integration_test/durable_test.dart -d web-server --browser-name=chrome
+  kotlin-windows:
+    if: startsWith(github.ref, 'refs/heads/proof/')
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Compile and run across JVM restarts
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $true
+          $work = New-Item -ItemType Directory (Join-Path $env:RUNNER_TEMP 'kotlin-runtime')
+          $base = 'https://dl.google.com/dl/android/maven2/androidx/sqlite'
+          foreach ($module in @('sqlite-jvm', 'sqlite-bundled-jvm')) {
+            Invoke-WebRequest "$base/$module/2.5.0/$module-2.5.0.jar" -OutFile (Join-Path $work "$module.jar")
+          }
+          $archive = Join-Path $work 'compiler.zip'
+          Invoke-WebRequest 'https://github.com/JetBrains/kotlin/releases/download/v2.1.20/kotlin-compiler-2.1.20.zip' -OutFile $archive
+          Expand-Archive $archive $work
+          $compiler = Join-Path $work 'kotlinc/bin/kotlinc.bat'
+          $dependencies = @((Join-Path $work 'sqlite-jvm.jar'), (Join-Path $work 'sqlite-bundled-jvm.jar')) -join ';'
+          $jar = Join-Path $work 'proof.jar'
+          & $compiler proofs/platform-runtime/Runtime.kt proofs/platform-runtime/JvmMain.kt -cp $dependencies -include-runtime -d $jar
+          $database = Join-Path $work 'runtime.db'
+          java -cp "$jar;$dependencies" JvmMainKt $database seed
+          java -cp "$jar;$dependencies" JvmMainKt $database relaunch

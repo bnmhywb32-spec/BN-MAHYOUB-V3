@@ -10,8 +10,8 @@ DatabaseFactory factory() {
  return mobile.databaseFactory;
 }
 void check(bool b){if(!b)throw StateError('assertion failed');}
-Future<String> proof() async {
- final f=factory(), path='bn_v3_runtime_proof.db';
+Future<String> proof({String path = 'bn_v3_runtime_proof.db'}) async {
+ final f=factory();
  Future<Database> open()=>f.openDatabase(path,options:OpenDatabaseOptions(version:1,onCreate:(db,v)async{
  await db.execute('CREATE TABLE stock(company TEXT PRIMARY KEY, qty INTEGER NOT NULL CHECK(qty>=0))');
  await db.execute('CREATE TABLE sales(id TEXT PRIMARY KEY, qty INTEGER, remaining INTEGER)');
@@ -45,6 +45,7 @@ Future<String> proof() async {
  throw StateError('expected rejection: $reason');
  }
  Future<void> verifyState() async {
+ check((await db.rawQuery("SELECT CAST(CAST('9007199254740993' AS INTEGER) + 2 AS TEXT) AS exact_value")).single['exact_value']=='9007199254740995');
  check((await db.query('sales',where:'id=?',whereArgs:['one'])).length==1);
  check(await sell('one',2)==8);
  check((await db.query('stock',where:'company=?',whereArgs:['A'])).first['qty']==8);
@@ -53,6 +54,8 @@ Future<String> proof() async {
  check((await db.query('outbox')).length==1);
  check((await db.query('journal')).length==4);
  check((await db.rawQuery('SELECT SUM(debit-credit) AS balance FROM journal')).first['balance']==0);
+ check((await db.query('journal',where:'account=?',whereArgs:['cash'])).single['debit']==200);
+ check((await db.query('journal',where:'account=?',whereArgs:['cogs'])).single['debit']==120);
  }
  try{
  await db.execute('CREATE TABLE IF NOT EXISTS proof_complete(id INTEGER PRIMARY KEY)');
