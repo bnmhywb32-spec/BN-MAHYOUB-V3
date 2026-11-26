@@ -3,7 +3,7 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "0776fbad467a53c0a3bfd5daf6b939f2a88fe87b",
+  "last_content_commit": "2282b9d4a65d9a7b0389ba916c9f6f3c5f5e4106",
   "code_sha": "0776fbad467a53c0a3bfd5daf6b939f2a88fe87b",
   "kind": "isolated_proof",
   "state": "unverified",
@@ -69,89 +69,49 @@
       "result": "11 tests passed; wrong-company receipts rejected before cursor or queue changes, existing transport ID cannot produce a second local sale. 100 SQLite settlements p95 2.186 ms; verified backup replay sample 2.056 ms; search p95 7.488 ms."
     },
     {
-      "name": "kotlin_windows_runtime",
-      "status": "pass",
-      "run_id": 45818355923,
-      "job_id": 139903832015,
-      "restriction": "JVM on Windows; two independent process invocations."
-    },
-    {
-      "name": "flutter_web_runtime",
-      "status": "pass",
-      "run_id": 45818355923,
-      "job_id": 139903833629,
-      "result": "Chromium test verified first load and reload with SQLite stored sale and exact decimal text."
-    },
-    {
-      "name": "flutter_windows_runtime",
-      "status": "pass",
-      "run_id": 45818355923,
-      "job_id": 139903832177,
-      "restriction": "SQLite reopened twice within Windows Flutter runner; OS process relaunch pending."
-    },
-    {
       "name": "kotlin_web_runtime_local",
       "status": "pass",
       "commit": "617cb59c2306f8c04cfc1d3b511ed654eefb4220",
       "result": "Kotlin/JS 2.1.20, sql.js 1.13.0, local Chromium; first load and full page reload returned PASS."
     },
     {
-      "name": "android_runtime",
-      "status": "unverified",
-      "commit": "617cb59c2306f8c04cfc1d3b511ed654eefb4220",
-      "previous_run_id": 45818355923,
-      "restriction": "Kotlin Android process relaunch passed. Flutter Android process relaunch still running; database reopen already verified on prior run.",
-      "run_id": 45819426997
-    },
-    {
-      "name": "flutter_android_database_reopen",
-      "status": "pass",
-      "run_id": 45818355923,
-      "job_id": 139903831699,
-      "restriction": "Emulator established in-process database reopen and exact amounts; separate process run tracked under android_runtime."
-    },
-    {
-      "name": "flutter_windows_os_relaunch",
-      "status": "pass",
-      "commit": "ee806d2b7dc8ef038508ee74a967180ef573deff",
-      "restriction": "Built Windows application launched in two separate processes by CI; results pending.",
-      "run_id": 45819426997,
-      "job_id": 139907510809,
-      "result": "Actual Flutter Windows executable. Independent processes emitted expected first launch and persisted sale markers."
-    },
-    {
-      "name": "kotlin_android_runtime",
-      "status": "pass",
-      "run_id": 45819160646,
-      "job_id": 139906600084,
-      "result": "Android API 35 emulator; seed and relaunch passed in distinct process launches."
-    },
-    {
-      "name": "kotlin_web_runtime_ci",
-      "status": "pass",
-      "run_id": 45819160646,
-      "job_id": 139906600444,
-      "result": "Chromium first load and full reload passed using the same Kotlin contract."
-    },
-    {
       "name": "v2_capability_and_outcome_baseline",
       "status": "unverified",
       "commit": "a4299ed04346892c03c4e31bb8d02ee508d7f2bd",
       "restriction": "Comparison criteria specified in FIRST-RELEASE. Matched V2 timings, user task results and complete approved capability inventory have not been established."
+    },
+    {
+      "name": "platform_runtime_matrix",
+      "status": "pass",
+      "commit": "175172b5180e3470fd021e26d026ec785db71958",
+      "run_id": 45819426997,
+      "jobs": {
+        "kotlin_android": 139907510585,
+        "kotlin_windows": 139907513429,
+        "kotlin_web": 139907511017,
+        "flutter_android": 139907510979,
+        "flutter_windows": 139907510809,
+        "flutter_web": 139907510882
+      },
+      "result": "6 of 6 ran the same synthetic sale contract with exact values. Native runners persisted across separate process launches; web runners persisted across Chromium reload."
+    },
+    {
+      "name": "python_transport_ci",
+      "status": "pass",
+      "commit": "86246305a7c692b14fe79138ed67489c06a5d902",
+      "run_id": 45820562895,
+      "job_id": 139911414841,
+      "result": "11 tests passed; CI fixture SQLite settlement p95 0.953 ms; in-memory search p95 10.688 ms."
     }
   ],
   "blockers": [
-    "Complete Flutter Android process-relaunch CI. Hardware printing/barcode and web storage behavior beyond the tested profile remain separate.",
+    "Hardware barcode/printing, web multi-tab and storage/eviction/offline asset behavior, and comparable user-task evidence remain open beyond the six proven runtime cells.",
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Inspect Flutter Android process restart evidence, then review measured candidate limitations and establish the approved V2 task baseline.",
+  "next_step": "Establish the V2 task baseline and independently review storage limits, remote trust and offline reservation reconciliation. Production and technology approval remain open.",
   "changed_files": [
-    "proofs/sync/authority_hub.py",
-    "proofs/sync/local_queue.py",
-    "proofs/sync/offline_sale.py",
-    "proofs/sync/test_http_transport.py",
-    "proofs/sync/test_transport.py"
+    "proofs/platform-runtime/contract.md"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
