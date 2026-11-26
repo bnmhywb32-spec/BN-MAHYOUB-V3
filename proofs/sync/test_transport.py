@@ -229,6 +229,23 @@ class TransportProof(unittest.TestCase):
         self.assertEqual(device.db.execute("SELECT COUNT(*) FROM offline_journal").fetchone(), (0,))
         self.assertEqual(len(device.pending()), 1)
 
+    def test_receipts_from_before_company_binding_replay_without_rewriting(self):
+        queue = self.queue("old-receipts.db")
+        queue.db.execute(
+            "INSERT INTO receipts VALUES (?, ?, ?, ?)",
+            ("A", "old", '{"amount":1}', '{"operation_id":"old","payload":{"amount":1},"received_at":"old"}'),
+        )
+        queue.db.commit()
+        recovered = self.queue("old-receipts.db")
+        response = dict(company="A", operation_id="old", payload={"amount": 1}, received_at="old")
+        recovered.acknowledge("old", response)
+        with self.assertRaisesRegex(ValueError, "^SYNC_SCOPE_MISMATCH$"):
+            recovered.acknowledge("old", dict(response, company="B"))
+        with self.assertRaisesRegex(ValueError, "^SYNC_ACK_MISMATCH$"):
+            recovered.acknowledge("old", dict(response, received_at="changed"))
+        stored = recovered.db.execute("SELECT response FROM receipts").fetchone()[0]
+        self.assertNotIn('"company"', stored)
+
 
 if __name__ == "__main__":
     unittest.main()

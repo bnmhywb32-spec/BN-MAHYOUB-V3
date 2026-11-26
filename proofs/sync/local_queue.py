@@ -47,7 +47,10 @@ class Queue:
             encoded = json.dumps(response,sort_keys=True,separators=(',',':'),allow_nan=False)
             prior = self.db.execute("SELECT response FROM receipts WHERE company=? AND id=?",(self.company,operation_id)).fetchone()
             if prior:
-                if prior[0] != encoded:
+                saved = json.loads(prior[0])
+                # Legacy proof receipts carry the company in their primary key only.
+                saved.setdefault("company", self.company)
+                if json.dumps(saved,sort_keys=True,separators=(',',':'),allow_nan=False) != encoded:
                     raise ValueError("SYNC_ACK_MISMATCH")
                 return
             row = self.db.execute("SELECT payload FROM pending WHERE company=? AND id=?",(self.company,operation_id)).fetchone()
