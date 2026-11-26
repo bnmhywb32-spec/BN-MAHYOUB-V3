@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "286ffa96d1ccbd09745de2cd4cc92f73fb3c94e1",
-  "code_sha": "286ffa96d1ccbd09745de2cd4cc92f73fb3c94e1",
+  "last_content_commit": "0c3f51243c99044072504b8d5489ac6d3dd16497",
+  "code_sha": "0c3f51243c99044072504b8d5489ac6d3dd16497",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -188,6 +188,12 @@
       "commit": "286ffa96d1ccbd09745de2cd4cc92f73fb3c94e1",
       "result": "Platform runtime in progress; changed-byte benchmark and corruption detection remain unverified.",
       "run_id": 45829374333
+    },
+    {
+      "name": "reference_fractional_contract",
+      "status": "pending",
+      "commit": "0c3f51243c99044072504b8d5489ac6d3dd16497",
+      "result": "Kotlin and Dart reference half-up postings and six matching boundary cases added. Dart reference rejects unsafe JS integer outputs; full cross-platform numeric contract, durable parity and overflow tests remain open."
     }
   ],
   "blockers": [
@@ -195,9 +201,10 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Resolve fractional rounding contract mismatch and exact numeric transport; verify chunk runtime and add changed-write integrity/benchmark tests. Production gates remain open.",
+  "next_step": "Verify reference CI, extend exact rounding boundary fixtures to durable and runtime adapters, and validate incremental browser storage integrity.",
   "changed_files": [
-    "proofs/platform-runtime/web/src/main/resources/proof-store.js"
+    "proofs/kotlin/Reference.kt",
+    "proofs/flutter/reference.dart"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
