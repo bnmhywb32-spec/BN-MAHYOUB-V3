@@ -29,16 +29,19 @@ class Queue:
         if receipt:
             if receipt[0] != body:
                 raise ValueError("SYNC_CONFLICT")
-            return
-        self.db.execute("INSERT OR IGNORE INTO pending VALUES(?,?,?)",(self.company,op,body))
+            return False
+        inserted = self.db.execute("INSERT OR IGNORE INTO pending VALUES(?,?,?)",(self.company,op,body))
         old = self.db.execute("SELECT payload FROM pending WHERE company=? AND id=?",(self.company,op)).fetchone()
         if old[0] != body:
             raise ValueError("SYNC_CONFLICT")
+        return inserted.rowcount == 1
 
     def pending(self):
         return self.db.execute("SELECT id,payload FROM pending WHERE company=? ORDER BY rowid",(self.company,)).fetchall()
 
     def acknowledge(self, operation_id, response):
+        if response.get("company") != self.company:
+            raise ValueError("SYNC_SCOPE_MISMATCH")
         with self.db:
             self.db.execute("BEGIN IMMEDIATE")
             encoded = json.dumps(response,sort_keys=True,separators=(',',':'),allow_nan=False)
@@ -65,6 +68,8 @@ class Queue:
             self.db.execute("BEGIN IMMEDIATE")
             last = self.revision()
             for row in rows:
+                if row.get("company") != self.company:
+                    raise ValueError("SYNC_SCOPE_MISMATCH")
                 rev = row["revision"]
                 op = row["operation_id"]
                 body = json.dumps(row["payload"],sort_keys=True,separators=(',',':'),allow_nan=False)

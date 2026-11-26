@@ -62,7 +62,7 @@ class AuthorityHub:
                     "WHERE company=? AND revision=?",
                     (company, expected["revision"]),
                 ).fetchone()
-                if row is None or cls._receipt(*row) != expected:
+                if row is None or cls._receipt(company, *row) != expected:
                     raise ValueError("RECOVERY_CHECKPOINT_MISMATCH")
         finally:
             snapshot.close()
@@ -154,11 +154,11 @@ class AuthorityHub:
                 "WHERE company=? AND revision>? ORDER BY revision LIMIT 100",
                 (company, after),
             ).fetchall()
-            return [self._receipt(op, body, rev, stamp) for op, body, rev, stamp in rows]
+            return [self._receipt(company, op, body, rev, stamp) for op, body, rev, stamp in rows]
 
     @staticmethod
-    def _receipt(operation_id, body, revision, received_at):
-        return dict(operation_id=operation_id, payload=json.loads(body),
+    def _receipt(company, operation_id, body, revision, received_at):
+        return dict(company=company, operation_id=operation_id, payload=json.loads(body),
                     revision=revision, received_at=received_at)
 
     def submit(self, token, operation_id, payload):
@@ -217,4 +217,4 @@ class AuthorityHub:
                         "INSERT INTO journal VALUES (?, ?, ?, ?)",
                         [(company, operation_id, account, value) for account, value in sale_journal(amount)],
                     )
-            return self._receipt(operation_id, body, revision, received_at)
+            return self._receipt(company, operation_id, body, revision, received_at)

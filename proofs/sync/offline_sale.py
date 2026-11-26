@@ -55,5 +55,6 @@ class OfflineSale(Queue):
                 "INSERT INTO offline_journal VALUES (?, ?, ?, ?)",
                 [(self.company, operation_id, account, value) for account, value in sale_journal(quantity)],
             )
-            self._enqueue_locked(operation_id, body)
+            if not self._enqueue_locked(operation_id, body):
+                raise ValueError("SYNC_CONFLICT")
         return payload

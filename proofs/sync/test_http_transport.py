@@ -110,6 +110,13 @@ class HttpTransportProof(unittest.TestCase):
                     post("/submit", dict(command, operation_id="second-sale"), token),
                     (409, {"code": "AUTHORITY_LIMIT"}),
                 )
+                wrong_scope = dict(first, company="B")
+                with self.assertRaisesRegex(ValueError, "^SYNC_SCOPE_MISMATCH$"):
+                    queue.acknowledge("sale", wrong_scope)
+                with self.assertRaisesRegex(ValueError, "^SYNC_SCOPE_MISMATCH$"):
+                    queue.receive([wrong_scope])
+                self.assertEqual(queue.revision(), 0)
+                self.assertEqual(len(queue.pending()), 1)
                 queue.acknowledge("sale", first)
                 self.assertEqual(post("/pull", {"after": 0}, other), (200, []))
                 self.assertEqual(post("/pull", {"after": 0}, observer), (200, [first]))

@@ -217,6 +217,18 @@ class TransportProof(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "^AUTHORITY_LIMIT$"):
             restarted.sell("more", 1)
 
+    def test_existing_generic_queue_entry_cannot_become_an_offline_sale(self):
+        path = self.path / "shared-queue.db"
+        transport = self.queue(path.name)
+        payload = {"kind": "sale", "resource": "stock", "amount": 1}
+        transport.enqueue(payload, "existing")
+        device = self.enterContext(closing(OfflineSale(path, "A", 1)))
+        with self.assertRaisesRegex(ValueError, "^SYNC_CONFLICT$"):
+            device.sell("existing", 1)
+        self.assertEqual(device.db.execute("SELECT remaining FROM offline_stock").fetchone(), (1,))
+        self.assertEqual(device.db.execute("SELECT COUNT(*) FROM offline_journal").fetchone(), (0,))
+        self.assertEqual(len(device.pending()), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
