@@ -27,3 +27,9 @@ function publishProofSnapshot(db, bytes, abort) {
         );
     });
 }
+
+if (navigator.serviceWorker) {
+    navigator.serviceWorker.register("./proof-worker.js").catch(error => {
+        console.error("BN_V3_OFFLINE_SETUP: " + error.message);
+    });
+}
