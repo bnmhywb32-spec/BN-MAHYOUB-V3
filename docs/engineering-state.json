@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "ee806d2b7dc8ef038508ee74a967180ef573deff",
-  "code_sha": "ee806d2b7dc8ef038508ee74a967180ef573deff",
+  "last_content_commit": "853485daae251099433ac191314bb7f9aa69cb9b",
+  "code_sha": "853485daae251099433ac191314bb7f9aa69cb9b",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -64,9 +64,9 @@
     {
       "name": "python_local_transport_authority_search",
       "status": "pass",
-      "commit": "d180193b8e43a47f7377c0c77ecd34909bd23a6d",
+      "commit": "853485daae251099433ac191314bb7f9aa69cb9b",
       "command": "python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.test_http_transport proofs.sync.offline_authority proofs.search.local_search",
-      "result": "9 tests passed; device-wide revocation holds offline reservations; 100 disk-backed sales p95 1.471 ms; backup + integrity + replay sample 2.044 ms; search p95 6.377 ms"
+      "result": "9 tests passed; read-only session cannot spend granted stock; stale snapshot rejected using independent receipt; 100 SQLite settlements p95 2.284 ms; backup + integrity + verified replay 2.387 ms; search p95 6.247 ms"
     },
     {
       "name": "kotlin_windows_runtime",
@@ -100,7 +100,7 @@
       "status": "unverified",
       "commit": "617cb59c2306f8c04cfc1d3b511ed654eefb4220",
       "previous_run_id": 45818355923,
-      "restriction": "Kotlin attempt failed with inconsistent Java/Kotlin JVM targets. Aligned targets and added process-relaunch scripts for both candidates.",
+      "restriction": "Kotlin passed two separate Android instrumentation processes in run 45819160646; Flutter Android process evidence pending",
       "run_id": 45819160646
     },
     {
@@ -114,22 +114,35 @@
       "name": "flutter_windows_os_relaunch",
       "status": "unverified",
       "commit": "ee806d2b7dc8ef038508ee74a967180ef573deff",
-      "restriction": "Built Windows application launched in two separate processes by CI; results pending."
+      "restriction": "Built Windows application launched in two separate processes by CI; results pending.",
+      "run_id": 45819426997
+    },
+    {
+      "name": "kotlin_android_runtime",
+      "status": "pass",
+      "run_id": 45819160646,
+      "job_id": 139906600084,
+      "result": "Android API 35 emulator; seed and relaunch passed in distinct process launches."
+    },
+    {
+      "name": "kotlin_web_runtime_ci",
+      "status": "pass",
+      "run_id": 45819160646,
+      "job_id": 139906600444,
+      "result": "Chromium first load and full reload passed using the same Kotlin contract."
     }
   ],
   "blockers": [
     "Verify both Android process-relaunch jobs, Windows Flutter OS relaunch, web storage limits, and hardware printing/barcode separately.",
-    "Exercise remote authenticated transport, identity enrollment, offline reservation release and stale-backup protection; loopback HTTP scope and replay verified.",
+    "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Check platform runtime CI and reconcile six candidate/platform outcomes before any technology approval.",
+  "next_step": "Reconcile Android and Windows Flutter restart CI and review candidate/storage limitations without changing approval status.",
   "changed_files": [
-    ".github/workflows/proof-runtime.yml",
-    "proofs/platform-runtime/flutter_main.dart",
-    "proofs/platform-runtime/flutter_windows.ps1",
-    "proofs/platform-runtime/proof_status.dart",
-    "proofs/platform-runtime/proof_status_io.dart",
-    "proofs/platform-runtime/proof_status_stub.dart"
+    "proofs/README.md",
+    "proofs/sync/authority_hub.py",
+    "proofs/sync/test_http_transport.py",
+    "proofs/sync/test_transport.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
