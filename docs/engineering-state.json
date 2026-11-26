@@ -143,6 +143,12 @@
       "status": "pass",
       "commit": "a4b21abd6ca42d8c13023b0aec514f936d776246",
       "result": "Local Chromium 156 isolated origin accepted a single localStorage value of at most 5,242,872 characters in this probe. A 10,000-item SQLite fixture took 4,308,992 Base64 chars; a 100,000-item fixture took 43,805,356 and does not fit. At 100,000 items index build was 3.464 s and query p95 88.704 ms (100 synthetic disk-backed queries). This disqualifies full-database localStorage snapshots for larger catalogs, not Kotlin as a language."
+    },
+    {
+      "name": "browser_indexeddb_snapshot_comparison",
+      "status": "pass",
+      "commit": "a4b21abd6ca42d8c13023b0aec514f936d776246",
+      "result": "Chromium IndexedDB persisted a 33,087,488-byte SQLite catalog with 100,000 synthetic items. SHA-256 matched after page reload; observed write 600.600 ms and read 309.500 ms in one run. This verifies capacity and byte integrity, not the latency or atomicity of a production SQLite adapter."
     }
   ],
   "blockers": [
@@ -150,7 +156,7 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Establish the V2 task baseline and independently review storage limits, remote trust and offline reservation reconciliation. Production and technology approval remain open.",
+  "next_step": "Compare transactional browser adapters against the measured catalog, complete matched V2 tasks, and independently review remote trust and offline reservation reconciliation.",
   "changed_files": [
     "proofs/search/local_search.py"
   ],
