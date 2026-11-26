@@ -1,13 +1,15 @@
 """Loopback-only transport fixture for exercising real HTTP request boundaries."""
 
 import json
+import ssl
+import subprocess
 import tempfile
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
 from proofs.sync.authority_hub import AuthorityHub
@@ -128,6 +130,73 @@ class HttpTransportProof(unittest.TestCase):
                 hub.revoke_session(token)
                 self.assertEqual(post("/submit", command, token), (403, {"code": "SYNC_DENIED"}))
                 self.assertEqual(post("/pull", {"after": 0}, token), (403, {"code": "SYNC_DENIED"}))
+            finally:
+                server.shutdown()
+                worker.join()
+
+    def test_tls_peer_verification_and_revoked_session(self):
+        temp = self.enterContext(tempfile.TemporaryDirectory())
+        path = Path(temp)
+        certificate = path / "test-cert.pem"
+        key = path / "test-key.pem"
+        subprocess.run(
+            [
+                "openssl", "req", "-x509", "-newkey", "rsa:2048", "-noenc",
+                "-days", "1", "-subj", "/CN=localhost", "-addext", "subjectAltName=DNS:localhost",
+                "-keyout", str(key), "-out", str(certificate),
+            ],
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        )
+        hub = AuthorityHub(path / "authority.db")
+        self.addCleanup(hub.db.close)
+        hub.seed("A", "stock", 1)
+        hub.allocate("A", "seller", "stock", 1)
+        token = hub.issue_session("A", "seller", can_submit=True)
+        queue = OfflineSale(path / "device.db", "A", 1)
+        self.addCleanup(queue.close)
+        payload = queue.sell("sale", 1)
+        body = {"operation_id": "sale", "payload": payload}
+
+        with ThreadingHTTPServer(("127.0.0.1", 0), endpoint(path / "authority.db")) as server:
+            tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            tls.minimum_version = ssl.TLSVersion.TLSv1_2
+            tls.load_cert_chain(certificate, key)
+            server.socket = tls.wrap_socket(server.socket, server_side=True)
+            worker = Thread(target=server.serve_forever)
+            worker.start()
+            try:
+                def post(host, context, credential):
+                    request = Request(
+                        f"https://{host}:{server.server_port}/submit",
+                        json.dumps(body).encode(),
+                        {"Authorization": f"Bearer {credential}", "Content-Type": "application/json"},
+                    )
+                    try:
+                        with urlopen(request, timeout=5, context=context) as response:
+                            return response.status, json.load(response)
+                    except HTTPError as error:
+                        with error:
+                            return error.code, json.load(error)
+
+                trusted = ssl.create_default_context(cafile=str(certificate))
+                for host, context in (
+                    ("localhost", ssl.create_default_context()),
+                    ("127.0.0.1", trusted),
+                ):
+                    with self.subTest(host=host), self.assertRaises(URLError) as failure:
+                        post(host, context, token)
+                    self.assertIsInstance(failure.exception.reason, ssl.SSLCertVerificationError)
+
+                self.assertEqual(hub.db.execute("SELECT COUNT(*) FROM operations").fetchone(), (0,))
+                self.assertEqual(post("localhost", trusted, "invalid"), (403, {"code": "SYNC_DENIED"}))
+                status, first = post("localhost", trusted, token)
+                self.assertEqual(status, 200)
+                self.assertEqual(post("localhost", trusted, token), (200, first))
+                queue.acknowledge("sale", first)
+                self.assertEqual(queue.pending(), [])
+                self.assertEqual(hub.db.execute("SELECT COUNT(*), SUM(amount) FROM journal").fetchone(), (4, 0))
+                hub.revoke_device("A", "seller")
+                self.assertEqual(post("localhost", trusted, token), (403, {"code": "SYNC_DENIED"}))
             finally:
                 server.shutdown()
                 worker.join()
