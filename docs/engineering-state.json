@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "b250b98e0a4068ea08f160ee4997336336c961d1",
-  "code_sha": "b250b98e0a4068ea08f160ee4997336336c961d1",
+  "last_content_commit": "d5043d549a358a0a9a3acdc00e35ce4089f1adba",
+  "code_sha": "d5043d549a358a0a9a3acdc00e35ce4089f1adba",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -200,6 +200,12 @@
       "status": "pending",
       "commit": "b250b98e0a4068ea08f160ee4997336336c961d1",
       "result": "Exact BigInteger/BigInt intermediate arithmetic, native signed 64-bit bounds, five additional persisted fractional fixtures plus existing 125 fixture. CI and web numeric transport not verified."
+    },
+    {
+      "name": "runtime_exact_integer_transport",
+      "status": "pending",
+      "commit": "d5043d549a358a0a9a3acdc00e35ce4089f1adba",
+      "result": "Persisted SQLite integer above 2^53, exact text retrieval and application addition, Kotlin sql.js BigInt retrieval. Adapter compatibility and platform CI pending; full financial path not proven."
     }
   ],
   "blockers": [
@@ -207,10 +213,11 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify reference and durable CI; extend exact numeric transport to platform runtime and add browser chunk integrity tests.",
+  "next_step": "Verify exact integer runtime and previous arithmetic CI; add chunk integrity and changed-write benchmark.",
   "changed_files": [
-    "proofs/kotlin/Durable.kt",
-    "proofs/flutter/durable.dart"
+    "proofs/platform-runtime/Runtime.kt",
+    "proofs/platform-runtime/flutter_main.dart",
+    "proofs/platform-runtime/web/src/main/kotlin/WebMain.kt"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
