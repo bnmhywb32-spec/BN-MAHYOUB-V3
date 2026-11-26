@@ -150,9 +150,10 @@
     {
       "name": "python_transport_ci",
       "status": "pass",
-      "run_id": 45827820945,
-      "commit": "621dca349f2f9b4e1b0c423ef77f33ac38ef5533",
-      "result": "Local transport and search workflow succeeded."
+      "run_id": 45871281256,
+      "commit": "6cff505f60aa9299c7ea9079b0fee669381f9a57",
+      "result": "35 tests passed on GitHub. CI p95 settlement 0.929 ms and in-memory search 9.971 ms on synthetic fixtures.",
+      "job_id": 140087035442
     },
     {
       "name": "platform_runtime_matrix",
@@ -239,31 +240,41 @@
       "name": "restore_connection_continuity",
       "status": "verified",
       "commit": "9c55b35a2641cbcf7702b4f233d642e274a00e38",
-      "result": "24 local tests passed. Recovery verifies staged SQLite under BEGIN IMMEDIATE and resumes using the same connection; missing path is rejected without creating a database. Secure staging and ongoing concurrent access remain separate requirements."
+      "result": "24 local tests passed. Recovery verifies staged SQLite under BEGIN IMMEDIATE and resumes using the same connection; missing path is rejected without creating a database. Secure staging and ongoing concurrent access remain separate requirements.",
+      "run_id": 45869971389,
+      "job_id": 140082539437
     },
     {
       "name": "authenticated_recovery_checkpoint",
       "status": "verified",
       "commit": "185b54793d2ce92307e19ca414f80987de9701d1",
-      "result": "25 local tests passed. A separate HMAC fixture rejects modified, cross-company, wrong-key and previously valid stale checkpoints, then verifies recovery and the revoked device. Trusted latest signature and signing key are injected by the test; real independent provisioning remains open."
+      "result": "25 local tests passed. A separate HMAC fixture rejects modified, cross-company, wrong-key and previously valid stale checkpoints, then verifies recovery and the revoked device. Trusted latest signature and signing key are injected by the test; real independent provisioning remains open.",
+      "run_id": 45870181285,
+      "job_id": 140083259641
     },
     {
       "name": "arabic_search_migration",
       "status": "verified",
       "commit": "660cead261976be4d19428355d9e53bfb87bdfe0",
-      "result": "28 local Python tests passed before final barcode-collision assertion; 8 search tests passed after it. Arabic elongation/diacritics and Arabic/Western barcode digits normalized with exact spelling priority. Interrupted legacy upgrade rolled back and unknown newer version rejected. 100,000-row legacy disk upgrade took 2.233 s, subsequent query p95 48.031 ms in one local synthetic run. Authentication and user-task comparison remain open."
+      "result": "28 local Python tests passed before final barcode-collision assertion; 8 search tests passed after it. Arabic elongation/diacritics and Arabic/Western barcode digits normalized with exact spelling priority. Interrupted legacy upgrade rolled back and unknown newer version rejected. 100,000-row legacy disk upgrade took 2.233 s, subsequent query p95 48.031 ms in one local synthetic run. Authentication and user-task comparison remain open.",
+      "run_id": 45870577362,
+      "job_id": 140084621146
     },
     {
       "name": "authorized_branch_search",
       "status": "verified",
       "commit": "13e537e495a4a7201b41f0bc12d8f2fb98f8d288",
-      "result": "33 local tests passed. Search derives company/device from session and validates branch grant in the same SQLite transaction. Tests cover revoked access, separate companies and databases, revocation concurrent with a read, scope recovery and old backups. Administrative grants and user identity remain synthetic; platform integration and CI pending."
+      "result": "33 local tests passed. Search derives company/device from session and validates branch grant in the same SQLite transaction. Tests cover revoked access, separate companies and databases, revocation concurrent with a read, scope recovery and old backups. Administrative grants and user identity remain synthetic; platform integration and CI pending.",
+      "run_id": 45870953708,
+      "job_id": 140085922045
     },
     {
       "name": "online_backup_snapshot_consistency",
       "status": "verified",
       "commit": "65966a11c1a31b0dc2b17d079e024533f9f66720",
-      "result": "35 local Python tests passed. Under WAL, a concurrent sale commits while backup and every company checkpoint remain at one earlier snapshot; a newer trusted checkpoint rejects it. Existing destination is preserved and injected staging failure cleans up. Linux local fixture; platform filesystem and external checkpoint durability pending."
+      "result": "35 local Python tests passed. Under WAL, a concurrent sale commits while backup and every company checkpoint remain at one earlier snapshot; a newer trusted checkpoint rejects it. Existing destination is preserved and injected staging failure cleans up. Linux local fixture; platform filesystem and external checkpoint durability pending.",
+      "run_id": 45871281256,
+      "job_id": 140087035442
     }
   ],
   "blockers": [
@@ -271,7 +282,7 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify scoped search and backup CI, then continue independent device identity and matched V2 task evidence.",
+  "next_step": "Continue realistic device enrollment and scoped financial operations, exercise backup recovery on target platforms and benchmark matched V2 tasks. Approval gates remain open.",
   "changed_files": [
     "proofs/sync/authority_hub.py",
     "proofs/sync/test_transport.py",
