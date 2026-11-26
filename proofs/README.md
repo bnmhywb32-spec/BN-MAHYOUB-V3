@@ -22,3 +22,13 @@ Status: implementing, **not** production-ready. Independent review dated 2026-11
 ## Boundaries and evidence
 
 No production sales, tax, exchange or pricing policy is adopted by these synthetic fixtures. Current status is branch creation and proof implementation. Source code, tests, CI run links, build logs, and measurements are separate proof evidence. CORE-005 is **not** fully approved; it cannot be silently closed by this experiment.
+
+## Local transport and authority proof
+
+Run from the repository root:
+
+```sh
+python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.offline_authority proofs.search.local_search
+```
+
+The SQLite authority fixture reserves finite stock or cash per company and device. It settles queued commands atomically, returning the stored receipt after a lost acknowledgement and accepting only contiguous inbox revisions. The session tuple is supplied by the test harness. Authentication, grant revocation, the accounting journal and network transport remain separate acceptance checks.

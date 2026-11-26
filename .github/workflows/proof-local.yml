@@ -1,0 +1,17 @@
+name: Isolated local transport and search
+on:
+  push:
+    branches: ['proof/**']
+    paths:
+      - 'proofs/sync/**'
+      - 'proofs/search/**'
+      - '.github/workflows/proof-local.yml'
+permissions:
+  contents: read
+jobs:
+  local:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.offline_authority proofs.search.local_search

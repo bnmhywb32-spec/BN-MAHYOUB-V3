@@ -10,9 +10,8 @@ DatabaseFactory factory() {
  return mobile.databaseFactory;
 }
 void check(bool b){if(!b)throw StateError('assertion failed');}
-Future<void> proof() async {
+Future<String> proof() async {
  final f=factory(), path='bn_v3_runtime_proof.db';
- await f.deleteDatabase(path);
  Future<Database> open()=>f.openDatabase(path,options:OpenDatabaseOptions(version:1,onCreate:(db,v)async{
  await db.execute('CREATE TABLE stock(company TEXT PRIMARY KEY, qty INTEGER NOT NULL CHECK(qty>=0))');
  await db.execute('CREATE TABLE sales(id TEXT PRIMARY KEY, qty INTEGER, remaining INTEGER)');
@@ -23,7 +22,10 @@ Future<void> proof() async {
  var db=await open();
  Future<int> sell(String id,int qty,{bool fail=false})=>db.transaction((t)async{
  final old=await t.query('sales',where:'id=?',whereArgs:[id]);
- if(old.isNotEmpty){check(old.first['qty']==qty);return old.first['remaining'] as int;}
+ if(old.isNotEmpty){
+ if(old.first['qty']!=qty)throw StateError('payload conflict');
+ return old.first['remaining'] as int;
+ }
  check(await t.rawUpdate("UPDATE stock SET qty=qty-? WHERE company='A' AND qty>=?",[qty,qty])==1);
  final remaining=(await t.query('stock',where:'company=?',whereArgs:['A'])).first['qty'] as int;
  await t.insert('sales',{'id':id,'qty':qty,'remaining':remaining});
@@ -33,13 +35,17 @@ Future<void> proof() async {
  if(fail)throw StateError('injected');
  return remaining;
  });
- Future<bool> rejects(Future<int> Function() action)async{try{await action();return false;}catch(_){return true;}}
- try{
- check(await sell('one',2)==8);
- check(await sell('one',2)==8);
- check(await rejects(()=>sell('one',1)));
- check(await rejects(()=>sell('fail',1,fail:true)));
- await db.close();db=await open();
+ Future<void> mustReject(Future<int> Function() action,String reason) async {
+ try {
+ await action();
+ } on StateError catch(error) {
+ if(error.message==reason)return;
+ rethrow;
+ }
+ throw StateError('expected rejection: $reason');
+ }
+ Future<void> verifyState() async {
+ check((await db.query('sales',where:'id=?',whereArgs:['one'])).length==1);
  check(await sell('one',2)==8);
  check((await db.query('stock',where:'company=?',whereArgs:['A'])).first['qty']==8);
  check((await db.query('stock',where:'company=?',whereArgs:['B'])).first['qty']==10);
@@ -47,6 +53,31 @@ Future<void> proof() async {
  check((await db.query('outbox')).length==1);
  check((await db.query('journal')).length==4);
  check((await db.rawQuery('SELECT SUM(debit-credit) AS balance FROM journal')).first['balance']==0);
+ }
+ try{
+ await db.execute('CREATE TABLE IF NOT EXISTS proof_complete(id INTEGER PRIMARY KEY)');
+ final existing=await db.query('proof_complete');
+ if(existing.isNotEmpty){
+ await verifyState();
+ return 'PASS: persisted sale verified after relaunch';
+ }
+ check(await sell('one',2)==8);
+ check(await sell('one',2)==8);
+ await mustReject(()=>sell('one',1),'payload conflict');
+ await mustReject(()=>sell('fail',1,fail:true),'injected');
+ await db.close();db=await open();
+ await verifyState();
+ await db.insert('proof_complete',{'id':1});
+ return 'PASS: durable sale saved; relaunch to verify persistence';
  }finally{await db.close();}
 }
-void main()=>runApp(MaterialApp(home:Scaffold(body:Center(child:FutureBuilder<void>(future:proof(),builder:(c,s)=>Text(s.hasError?'FAIL: ${s.error}':s.connectionState==ConnectionState.done?'PASS: durable platform proof':'RUNNING'))))));
+void main() {
+ WidgetsFlutterBinding.ensureInitialized();
+ final result = proof();
+ runApp(MaterialApp(home:Scaffold(body:Center(
+  child:FutureBuilder<String>(
+   future:result,
+   builder:(context,snapshot)=>Text(snapshot.hasError?'FAIL: ${snapshot.error}':snapshot.data??'RUNNING'),
+  ),
+ ))));
+}
