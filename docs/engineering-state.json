@@ -78,7 +78,7 @@
       "name": "v2_capability_and_outcome_baseline",
       "status": "unverified",
       "commit": "a4299ed04346892c03c4e31bb8d02ee508d7f2bd",
-      "restriction": "Private targeted run passed 62 tests across four suites covering search, stock, sale posting and synchronization. Used source-only archive, Android 36 and a corrected JVM test environment. V2 functional task timings and complete approved capability mapping remain unverified. The full Gradle suite is being retried with worker isolation."
+      "restriction": "Private targeted V2 run passed 62 tests in four suites covering search, stock, sale posting and synchronization. Broad suite attempts hit runner/JVM issues; the final per-class isolated retry ended at an 8-minute timeout (exit 124). No full-suite result or matched V2 task timing is claimed; complete approved capability mapping remains open."
     },
     {
       "name": "platform_runtime_matrix",
