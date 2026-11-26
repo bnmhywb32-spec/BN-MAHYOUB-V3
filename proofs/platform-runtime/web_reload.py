@@ -77,19 +77,23 @@ def run(build_path, lock_name, test_abort, test_offline):
 
                 if test_abort:
                     verify(lambda: page.goto(url + "/?abort-write"), "FAIL: Injected snapshot abort")
-                verify(lambda: page.goto(url), SEEDED)
-                verify(page.reload, REOPENED)
-                if test_abort:
-                    verify(lambda: page.goto(url + "/?abort-write"), "FAIL: Injected snapshot abort")
-                    verify(lambda: page.goto(url), REOPENED)
                 if test_offline:
+                    if not test_abort:
+                        raise ValueError("Offline first-sale check requires a priming abort")
                     page.wait_for_function("Boolean(navigator.serviceWorker.controller)", timeout=45_000)
                     page.context.set_offline(True)
                     try:
+                        verify(lambda: page.goto(url), SEEDED)
                         verify(page.reload, REOPENED)
-                        print("PASS: browser reopened the committed sale with network disabled")
+                        print("PASS: first sale committed and reloaded with network disabled")
                     finally:
                         page.context.set_offline(False)
+                else:
+                    verify(lambda: page.goto(url), SEEDED)
+                    verify(page.reload, REOPENED)
+                if test_abort:
+                    verify(lambda: page.goto(url + "/?abort-write"), "FAIL: Injected snapshot abort")
+                    verify(lambda: page.goto(url), REOPENED)
                 if lock_name:
                     verify_tabs(browser, url, lock_name)
                 browser.close()
