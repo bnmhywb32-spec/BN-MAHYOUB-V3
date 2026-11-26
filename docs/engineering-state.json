@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "a33b925bba8ee586cb4fda5c567efc89431a496e",
-  "code_sha": "a33b925bba8ee586cb4fda5c567efc89431a496e",
+  "last_content_commit": "7e5a68a185431cc872ca7e6279be027efc1443a2",
+  "code_sha": "7e5a68a185431cc872ca7e6279be027efc1443a2",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -186,8 +186,9 @@
       "name": "incremental_browser_chunk_proof",
       "status": "verified",
       "commit": "6df3ae578ec856d9de171a31aec8e289cc5565a5",
-      "result": "Local Chromium: 100,000-row SQLite catalog, first offline sale, aborted publication, replay, two tabs, exact integer runtime; one changed catalog row wrote 65,536 of 34,271,232 bytes. Legacy 33,087,488-byte snapshot auto-migrated, unchanged chunks were not written, same-length corruption rejected using a stored SHA-256. Existing data can only be verified after its first seal. GitHub CI pending.",
-      "run_id": 45829374333
+      "result": "Local and GitHub Chromium: 100,000-row SQLite catalog, offline sale, aborted publication, replay, two tabs, exact integer runtime; one changed catalog row wrote 65,536 of 34,271,232 bytes. Legacy 33,087,488-byte snapshot auto-migrated, unchanged chunks were not written, same-length corruption rejected using a stored SHA-256. Existing data can only be verified after its first seal.",
+      "run_id": 45869081998,
+      "job_id": 140079468861
     },
     {
       "name": "reference_fractional_contract",
@@ -211,7 +212,15 @@
       "name": "restore_history_fingerprint",
       "status": "verified",
       "commit": "a33b925bba8ee586cb4fda5c567efc89431a496e",
-      "result": "21 local Python tests passed. A backup with a modified earlier sale, recalculated balanced journal, unchanged latest receipt and unchanged allocation state is rejected. Receipt, authorization and full ordered history fingerprints are captured in one read transaction. Independent authenticated checkpoint storage remains unverified."
+      "result": "21 local Python tests passed. A backup with a modified earlier sale, recalculated balanced journal, unchanged latest receipt and unchanged allocation state is rejected. Receipt, authorization and full ordered history fingerprints are captured in one read transaction. Independent authenticated checkpoint storage remains unverified.",
+      "run_id": 45869269353,
+      "job_id": 140080113632
+    },
+    {
+      "name": "tls_loopback_identity",
+      "status": "verified",
+      "commit": "7e5a68a185431cc872ca7e6279be027efc1443a2",
+      "result": "22 local Python tests passed. Real loopback TLS rejects an untrusted certificate and wrong hostname before any sale, accepts a verified peer, deduplicates a sale and rejects the revoked device. Self-signed fixture certificate; remote deployment, enrollment and certificate lifecycle remain open."
     }
   ],
   "blockers": [
@@ -219,10 +228,9 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify new CI, then continue addressing browser durability and remote trust. CORE-005 and production approval remain open.",
+  "next_step": "Verify TLS CI and remaining platform jobs; continue remote trust, recovery checkpoint integrity and V2 comparison under proof gates.",
   "changed_files": [
-    "proofs/sync/authority_hub.py",
-    "proofs/sync/test_transport.py",
+    "proofs/sync/test_http_transport.py",
     "proofs/README.md"
   ],
   "related_review": {
