@@ -35,13 +35,15 @@ jobs:
           flutter config --no-analytics
           flutter create --project-name platform_proof --platforms=android,web,windows runtime_app
           cp proofs/platform-runtime/flutter_main.dart runtime_app/lib/main.dart
+          cp proofs/platform-runtime/proof_status*.dart runtime_app/lib/
           cp -r proofs/platform-runtime/integration_test runtime_app
           cd runtime_app
           flutter pub add 'sqflite:2.4.1' 'sqflite_common:2.5.5' 'sqflite_common_ffi:2.3.4+4' 'sqflite_common_ffi_web:0.4.5+4' 'dev:integration_test:{"sdk":"flutter"}'
           flutter analyze lib integration_test
       - if: matrix.target == 'windows'
         working-directory: runtime_app
-        run: flutter test integration_test/durable_test.dart -d windows
+        shell: pwsh
+        run: ../proofs/platform-runtime/flutter_windows.ps1
       - if: matrix.target == 'android'
         name: Enable emulator acceleration
         run: |
