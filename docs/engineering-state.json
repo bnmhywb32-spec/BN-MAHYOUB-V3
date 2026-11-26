@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "3396d01c539e48700106b27555a9c93a5324535c",
-  "code_sha": "3396d01c539e48700106b27555a9c93a5324535c",
+  "last_content_commit": "794cd06a323b4999dc55599238db144f22bf0551",
+  "code_sha": "794cd06a323b4999dc55599238db144f22bf0551",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -161,6 +161,12 @@
       "status": "pass",
       "commit": "3396d01c539e48700106b27555a9c93a5324535c",
       "result": "18 local Python tests passed. Recovery rejects revoked sessions, missing company checkpoints and stock allocated after the last receipt. Requires independently retained current checkpoints."
+    },
+    {
+      "name": "kotlin_cached_offline_boot",
+      "status": "pass",
+      "commit": "794cd06a323b4999dc55599238db144f22bf0551",
+      "result": "Local Chromium controlled reload with Playwright network disabled reopened an IndexedDB sale and 100,000-row catalog. Requires successful online priming; asset upgrades and cache eviction are unverified."
     }
   ],
   "blockers": [
@@ -170,8 +176,10 @@
   ],
   "next_step": "Compare transactional browser adapters against the measured catalog, complete matched V2 tasks, and independently review remote trust and offline reservation reconciliation.",
   "changed_files": [
-    "proofs/sync/authority_hub.py",
-    "proofs/sync/test_transport.py"
+    ".github/workflows/proof-runtime.yml",
+    "proofs/platform-runtime/web/src/main/resources/proof-store.js",
+    "proofs/platform-runtime/web/src/main/resources/proof-worker.js",
+    "proofs/platform-runtime/web_reload.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
