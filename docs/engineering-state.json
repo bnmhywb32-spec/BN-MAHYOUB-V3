@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "794cd06a323b4999dc55599238db144f22bf0551",
-  "code_sha": "794cd06a323b4999dc55599238db144f22bf0551",
+  "last_content_commit": "41d4b79d1e6e5148b3246f527dea9ebdb82470c7",
+  "code_sha": "41d4b79d1e6e5148b3246f527dea9ebdb82470c7",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -167,6 +167,12 @@
       "status": "pass",
       "commit": "794cd06a323b4999dc55599238db144f22bf0551",
       "result": "Local Chromium controlled reload with Playwright network disabled reopened an IndexedDB sale and 100,000-row catalog. Requires successful online priming; asset upgrades and cache eviction are unverified."
+    },
+    {
+      "name": "restore_journal_semantics",
+      "status": "pass",
+      "commit": "41d4b79d1e6e5148b3246f527dea9ebdb82470c7",
+      "result": "19 local Python tests passed. An otherwise valid SQLite backup with an intact checkpoint and missing journal posting is denied. All sale postings in the fixture are compared to expected fixed-price journal rows."
     }
   ],
   "blockers": [
@@ -174,12 +180,10 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Compare transactional browser adapters against the measured catalog, complete matched V2 tasks, and independently review remote trust and offline reservation reconciliation.",
+  "next_step": "Confirm pushed CI, then continue scalable browser persistence and matched V2 task proof under existing gates.",
   "changed_files": [
-    ".github/workflows/proof-runtime.yml",
-    "proofs/platform-runtime/web/src/main/resources/proof-store.js",
-    "proofs/platform-runtime/web/src/main/resources/proof-worker.js",
-    "proofs/platform-runtime/web_reload.py"
+    "proofs/sync/authority_hub.py",
+    "proofs/sync/test_transport.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
