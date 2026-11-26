@@ -50,7 +50,7 @@ def verify_tabs(browser, url, lock_name):
         context.close()
 
 
-def run(build_path, lock_name):
+def run(build_path, lock_name, test_abort):
     handler = partial(SimpleHTTPRequestHandler, directory=build_path)
     with ThreadingHTTPServer(("127.0.0.1", 0), handler) as server:
         thread = Thread(target=server.serve_forever)
@@ -75,8 +75,13 @@ def run(build_path, lock_name):
                         raise AssertionError(response)
                     print(response)
 
+                if test_abort:
+                    verify(lambda: page.goto(url + "/?abort-write"), "FAIL: Injected snapshot abort")
                 verify(lambda: page.goto(url), SEEDED)
                 verify(page.reload, REOPENED)
+                if test_abort:
+                    verify(lambda: page.goto(url + "/?abort-write"), "FAIL: Injected snapshot abort")
+                    verify(lambda: page.goto(url), REOPENED)
                 if lock_name:
                     verify_tabs(browser, url, lock_name)
                 browser.close()
@@ -89,5 +94,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("build_path")
     parser.add_argument("--lock-name")
+    parser.add_argument("--test-abort", action="store_true")
     args = parser.parse_args()
-    run(args.build_path, args.lock_name)
+    run(args.build_path, args.lock_name, args.test_abort)
