@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "8f69673de1b829c6f838f8a59d7dcd82d6ad9198",
-  "code_sha": "8f69673de1b829c6f838f8a59d7dcd82d6ad9198",
+  "last_content_commit": "805e45071bbbde23c37c71160b6d9dfe30d31920",
+  "code_sha": "805e45071bbbde23c37c71160b6d9dfe30d31920",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -109,17 +109,36 @@
       "commit": "8193ae8abf51991402f7bfc216a0c6b639ca5d87",
       "comparison_base": "86f24c8",
       "result": "One local paired measurement for 10,000 synthetic in-memory items: build 12.895 s before, 0.222 s after. Both retained the indexed prefix query plan. This comparison is within V3 and is not evidence of V2 task speed."
+    },
+    {
+      "name": "kotlin_web_tabs_local",
+      "status": "pass",
+      "commit": "805e45071bbbde23c37c71160b6d9dfe30d31920",
+      "result": "Chromium held Web Lock until two page requests queued. One initial sale and one stored replay were observed; single-page reload also passed."
+    },
+    {
+      "name": "flutter_web_tabs_ci",
+      "status": "unverified",
+      "commit": "805e45071bbbde23c37c71160b6d9dfe30d31920",
+      "restriction": "Same contention harness configured on Flutter; pending GitHub Actions."
     }
   ],
   "blockers": [
-    "Hardware barcode/printing, web multi-tab and storage/eviction/offline asset behavior, and comparable user-task evidence remain open beyond the six proven runtime cells.",
+    "Hardware barcode/printing, Flutter web tab-contention CI, browser eviction/offline assets and comparable user-task evidence remain open.",
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
   "next_step": "Establish the V2 task baseline and independently review storage limits, remote trust and offline reservation reconciliation. Production and technology approval remain open.",
   "changed_files": [
-    "proofs/sync/local_queue.py",
-    "proofs/sync/test_transport.py"
+    ".github/workflows/proof-runtime.yml",
+    "proofs/platform-runtime/contract.md",
+    "proofs/platform-runtime/flutter_main.dart",
+    "proofs/platform-runtime/proof_status.dart",
+    "proofs/platform-runtime/proof_status_io.dart",
+    "proofs/platform-runtime/proof_status_stub.dart",
+    "proofs/platform-runtime/proof_status_web.dart",
+    "proofs/platform-runtime/web/src/main/kotlin/WebMain.kt",
+    "proofs/platform-runtime/web_reload.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
