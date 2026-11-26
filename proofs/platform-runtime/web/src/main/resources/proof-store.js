@@ -23,6 +23,7 @@ function readProofSnapshot(db) {
         const tx = db.transaction(["snapshots", "chunks"]);
         const snapshots = tx.objectStore("snapshots");
         const chunks = tx.objectStore("chunks");
+        const expectedHash = snapshots.get("sha256");
         let bytes;
         const meta = snapshots.get("chunk-length");
         meta.onsuccess = () => {
@@ -50,12 +51,36 @@ function readProofSnapshot(db) {
                 };
             }
         };
-        tx.oncomplete = () => resolve(bytes);
+        tx.oncomplete = async () => {
+            try {
+                if (expectedHash.result !== undefined) {
+                    if (!(bytes instanceof Uint8Array) ||
+                        await proofHash(bytes) !== expectedHash.result) {
+                        throw new Error("Snapshot integrity mismatch");
+                    }
+                } else if (bytes !== undefined) {
+                    // Upgrade older unsealed snapshots before allowing the fixture to proceed.
+                    await publishProofSnapshot(db, bytes, false);
+                }
+                resolve(bytes);
+            } catch (error) {
+                reject(error);
+            }
+        };
         tx.onabort = () => reject(tx.error ?? new Error("Invalid snapshot chunks"));
     });
 }
 
-function publishProofSnapshot(db, bytes, abort) {
+async function proofHash(bytes) {
+    const hash = await crypto.subtle.digest("SHA-256", bytes);
+    return Array.from(new Uint8Array(hash), byte => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function publishProofSnapshot(db, bytes, abort) {
+    if (!(bytes instanceof Uint8Array) || bytes.length === 0) {
+        throw new Error("Invalid snapshot");
+    }
+    const digest = await proofHash(bytes);
     return new Promise((resolve, reject) => {
         const tx = db.transaction(["snapshots", "chunks"], "readwrite", { durability: "strict" });
         const snapshots = tx.objectStore("snapshots");
@@ -77,7 +102,7 @@ function publishProofSnapshot(db, bytes, abort) {
                     const prior = request.result;
                     if (!(prior instanceof Uint8Array) || prior.length !== part.length ||
                         !part.every((value, i) => value === prior[i])) {
-                        chunks.put(part, key);
+                        chunks.put(part.slice(), key);
                         written += part.length;
                     }
                 };
@@ -85,6 +110,7 @@ function publishProofSnapshot(db, bytes, abort) {
             for (let key = Math.ceil(bytes.length / PROOF_CHUNK_SIZE);
                 key < Math.ceil(previousLength / PROOF_CHUNK_SIZE); key++) chunks.delete(key);
             snapshots.put(bytes.length, "chunk-length");
+            snapshots.put(digest, "sha256");
             snapshots.delete("catalog");
             // Queue after all reads; their callbacks enqueue changed writes before this abort.
             if (abort) {

@@ -1,4 +1,4 @@
-const cacheName = "bn-v3-kotlin-offline-proof-v1";
+const cacheName = "bn-v3-kotlin-offline-proof-v2";
 const assets = ["./", "./proof-store.js", "./proof.js", "./sql-wasm.wasm"]
     .map(path => new URL(path, self.registration.scope).href);
 

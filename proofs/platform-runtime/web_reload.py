@@ -94,6 +94,20 @@ def run(build_path, lock_name, test_abort, test_offline):
                 if test_abort:
                     verify(lambda: page.goto(url + "/?abort-write"), "FAIL: Injected snapshot abort")
                     verify(lambda: page.goto(url), REOPENED)
+                    chunk_writes = []
+                    def capture(message):
+                        if "BN_V3_CHUNK_BYTES:" in message.text:
+                            chunk_writes.append(message.text.split("BN_V3_CHUNK_BYTES: ", 1)[1])
+                    page.on("console", capture)
+                    verify(lambda: page.goto(url + "/?commit-update"), "PASS: incremental catalog update saved")
+                    if len(chunk_writes) != 1:
+                        raise AssertionError(f"Missing incremental write measurement: {chunk_writes}")
+                    written, total = (int(value) for value in chunk_writes[0].split("/"))
+                    if not 0 < written < total // 10:
+                        raise AssertionError(f"Expected bounded chunk write, got {written}/{total}")
+                    print(f"PASS: updated {written} of {total} bytes")
+                    page.remove_listener("console", capture)
+                    verify(lambda: page.goto(url + "/?expect-update"), REOPENED)
                 if lock_name:
                     verify_tabs(browser, url, lock_name)
                 browser.close()

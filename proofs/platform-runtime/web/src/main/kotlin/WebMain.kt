@@ -69,6 +69,8 @@ fun main() {
     val config = js("({})")
     config.locateFile = { name: String -> "./" + name }
     val abort = location.search == "?abort-write"
+    val update = location.search == "?commit-update"
+    val verifyUpdate = location.search == "?expect-update"
     val launch = initSqlJs(config).then<Promise<String>> { sql: dynamic ->
         val locks = navigator.locks
         check(locks != null) { "Browser storage coordination is unavailable" }
@@ -77,16 +79,22 @@ fun main() {
                 readProofSnapshot(store).then<dynamic> { bytes: dynamic ->
                     val snapshot = Snapshot(bytes)
                     val result = runtimeProof { openBrowser(sql, snapshot) }
-                    if (abort) {
+                    if (abort || update || verifyUpdate) {
                         val failedBytes = snapshot.bytes
                         val db = js("new sql.Database(failedBytes)")
                         try {
-                            db.run("CREATE TABLE aborted_probe(id INTEGER)")
-                            snapshot.bytes = db.export()
+                            if (abort) db.run("CREATE TABLE aborted_probe(id INTEGER)")
+                            if (update) db.run("UPDATE catalog SET title='incremental-test' WHERE sku=1")
+                            if (verifyUpdate) {
+                                check(db.exec("SELECT title FROM catalog WHERE sku=1")[0].values[0][0] == "incremental-test")
+                            }
+                            if (abort || update) snapshot.bytes = db.export()
                         } finally { db.close() }
                     }
-                    if (abort || bytes == null) {
-                        publishProofSnapshot(store, snapshot.bytes, abort).then { result }
+                    if (abort || update || bytes == null) {
+                        publishProofSnapshot(store, snapshot.bytes, abort).then {
+                            if (update) "PASS: incremental catalog update saved" else result
+                        }
                     } else {
                         result
                     }

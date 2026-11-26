@@ -139,3 +139,4 @@ jobs:
           cp "$runtime" build/dist/js/productionExecutable/
           python3 -m pip install --disable-pip-version-check playwright==1.52.0
           python3 ../web_reload.py build/dist/js/productionExecutable --lock-name bn-v3-kotlin-runtime-v1 --test-abort --test-offline
+          python3 ../chunk_storage_test.py
