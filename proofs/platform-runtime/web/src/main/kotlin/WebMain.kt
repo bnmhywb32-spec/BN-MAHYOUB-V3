@@ -47,7 +47,12 @@ private fun openBrowser(sql: dynamic, snapshot: Snapshot): ProofConnection {
                     }
                     return statement.step() as Boolean
                 }
-                override fun getLong(index: Int) = (statement.get()[index] as Double).toLong()
+                override fun getLong(index: Int): Long {
+                    val options = js("({useBigInt:true})")
+                    val value = statement.get(null, options)[index]
+                    check(jsTypeOf(value) == "bigint") { "Expected exact SQLite integer" }
+                    return value.toString().toLong()
+                }
                 override fun getText(index: Int) = statement.get()[index] as String
                 override fun close() { statement.free() }
             }
