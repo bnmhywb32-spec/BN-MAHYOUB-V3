@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "04272134a84d758491442d31517154d8e2035c77",
-  "code_sha": "04272134a84d758491442d31517154d8e2035c77",
+  "last_content_commit": "9c55b35a2641cbcf7702b4f233d642e274a00e38",
+  "code_sha": "9c55b35a2641cbcf7702b4f233d642e274a00e38",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -206,9 +206,10 @@
     },
     {
       "name": "runtime_exact_integer_transport",
-      "status": "pending",
+      "status": "verified",
       "commit": "d5043d549a358a0a9a3acdc00e35ce4089f1adba",
-      "result": "Persisted SQLite integer above 2^53, exact text retrieval and application addition, Kotlin sql.js BigInt retrieval. Adapter compatibility and platform CI pending; full financial path not proven."
+      "result": "All six platform jobs passed at f308cab. SQLite stored and retrieved 9007199254740993 and added 2 exactly. Flutter uses decimal text and BigInt; Kotlin web uses sql.js BigInt. Full financial input/rounding path remains unverified.",
+      "run_id": 45869081998
     },
     {
       "name": "restore_history_fingerprint",
@@ -230,7 +231,15 @@
       "name": "checkpoint_snapshot_concurrency",
       "status": "verified",
       "commit": "04272134a84d758491442d31517154d8e2035c77",
-      "result": "23 local Python tests passed. In WAL mode, a second sale commits between the receipt and authorization reads while the checkpoint retains one consistent earlier snapshot."
+      "result": "23 local Python tests passed. In WAL mode, a second sale commits between the receipt and authorization reads while the checkpoint retains one consistent earlier snapshot.",
+      "run_id": 45869768342,
+      "job_id": 140081836598
+    },
+    {
+      "name": "restore_connection_continuity",
+      "status": "verified",
+      "commit": "9c55b35a2641cbcf7702b4f233d642e274a00e38",
+      "result": "24 local tests passed. Recovery verifies staged SQLite under BEGIN IMMEDIATE and resumes using the same connection; missing path is rejected without creating a database. Secure staging and ongoing concurrent access remain separate requirements."
     }
   ],
   "blockers": [
@@ -238,8 +247,9 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify concurrency CI, investigate signed checkpoint authenticity and independent remote proof; preserve open production gates.",
+  "next_step": "Verify recovery CI, assess secure checkpoint handling and per-operation consistency, then continue V2 task comparison and hardware gates.",
   "changed_files": [
+    "proofs/sync/authority_hub.py",
     "proofs/sync/test_transport.py"
   ],
   "related_review": {
