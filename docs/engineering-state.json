@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "8193ae8abf51991402f7bfc216a0c6b639ca5d87",
-  "code_sha": "8193ae8abf51991402f7bfc216a0c6b639ca5d87",
+  "last_content_commit": "8f69673de1b829c6f838f8a59d7dcd82d6ad9198",
+  "code_sha": "8f69673de1b829c6f838f8a59d7dcd82d6ad9198",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -64,9 +64,9 @@
     {
       "name": "python_local_transport_authority_search",
       "status": "pass",
-      "commit": "8193ae8abf51991402f7bfc216a0c6b639ca5d87",
+      "commit": "8f69673de1b829c6f838f8a59d7dcd82d6ad9198",
       "command": "python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.test_http_transport proofs.sync.offline_authority proofs.search.local_search",
-      "result": "12 passed including barcode precedence, legacy index backfill, and indexed term deletion. Search p95 40.586 ms during the full local run. Settlement p95 3.268 ms."
+      "result": "13 passed. Legacy stored receipts replay using their persisted company key without rewriting; scope and timestamp mismatches still reject. Search p95 23.933 ms; settlement p95 2.042 ms."
     },
     {
       "name": "kotlin_web_runtime_local",
@@ -98,10 +98,10 @@
     {
       "name": "python_transport_ci",
       "status": "pass",
-      "commit": "86246305a7c692b14fe79138ed67489c06a5d902",
-      "run_id": 45820562895,
-      "job_id": 139911414841,
-      "result": "11 tests passed; CI fixture SQLite settlement p95 0.953 ms; in-memory search p95 10.688 ms."
+      "commit": "8136d89623d60c7516ee1e94d5386456f529f8c7",
+      "run_id": 45821545499,
+      "job_id": 139914783050,
+      "result": "12 passed at the search-index package. CI p95 1.038 ms settlement and 6.173 ms search; current 13-test package awaiting its own CI."
     },
     {
       "name": "search_index_build_comparison",
@@ -118,7 +118,8 @@
   ],
   "next_step": "Establish the V2 task baseline and independently review storage limits, remote trust and offline reservation reconciliation. Production and technology approval remain open.",
   "changed_files": [
-    "proofs/search/local_search.py"
+    "proofs/sync/local_queue.py",
+    "proofs/sync/test_transport.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
