@@ -305,6 +305,25 @@ class TransportProof(unittest.TestCase):
                 path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")}
             )
 
+    def test_restore_rejects_revision_gap_despite_latest_receipt_and_balanced_journal(self):
+        self.hub.seed("A", "stock", 2)
+        self.hub.allocate("A", "seller", "stock", 2)
+        token = self.hub.issue_session("A", "seller", can_submit=True)
+        sale = {"kind": "sale", "resource": "stock", "amount": 1}
+        self.hub.submit(token, "first", sale)
+        receipt = self.hub.submit(token, "second", sale)
+        path = self.path / "gap.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+            with snapshot:
+                snapshot.execute("DELETE FROM journal WHERE operation_id='first'")
+                snapshot.execute("DELETE FROM operations WHERE id='first'")
+            self.assertEqual(snapshot.execute("PRAGMA integrity_check").fetchone(), ("ok",))
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_REVISION_GAP$"):
+            AuthorityHub.open_verified_backup(
+                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")}
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

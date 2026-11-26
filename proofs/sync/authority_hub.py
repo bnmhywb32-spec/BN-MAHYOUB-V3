@@ -79,6 +79,11 @@ class AuthorityHub:
             for company, expected in authorization.items():
                 if cls._authorization_digest(snapshot, company) != expected:
                     raise ValueError("RECOVERY_AUTHORIZATION_MISMATCH")
+            if snapshot.execute(
+                "SELECT 1 FROM operations GROUP BY company "
+                "HAVING MIN(revision) <> 1 OR MAX(revision) <> COUNT(*) LIMIT 1"
+            ).fetchone() is not None:
+                raise ValueError("RECOVERY_REVISION_GAP")
             cls._verify_recovered_journal(snapshot)
         finally:
             snapshot.close()
