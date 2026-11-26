@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "7e5a68a185431cc872ca7e6279be027efc1443a2",
-  "code_sha": "7e5a68a185431cc872ca7e6279be027efc1443a2",
+  "last_content_commit": "04272134a84d758491442d31517154d8e2035c77",
+  "code_sha": "04272134a84d758491442d31517154d8e2035c77",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -192,15 +192,17 @@
     },
     {
       "name": "reference_fractional_contract",
-      "status": "pending",
+      "status": "verified",
       "commit": "0c3f51243c99044072504b8d5489ac6d3dd16497",
-      "result": "Kotlin and Dart reference half-up postings and six matching boundary cases added. Dart reference rejects unsafe JS integer outputs; full cross-platform numeric contract, durable parity and overflow tests remain open."
+      "result": "Kotlin and Dart reference checks passed at 8ad383a; fractional fixtures and boundary checks ran. Full cross-platform financial path remains open.",
+      "run_id": 45869269101
     },
     {
       "name": "durable_fractional_boundaries",
-      "status": "pending",
+      "status": "verified",
       "commit": "b250b98e0a4068ea08f160ee4997336336c961d1",
-      "result": "Exact BigInteger/BigInt intermediate arithmetic, native signed 64-bit bounds, five additional persisted fractional fixtures plus existing 125 fixture. CI and web numeric transport not verified."
+      "result": "Kotlin and Dart native SQLite tests passed at 8ad383a, including persisted fractional fixtures, rollback, replay, backup and overflow. Web financial path remains open.",
+      "run_id": 45869269093
     },
     {
       "name": "runtime_exact_integer_transport",
@@ -220,7 +222,15 @@
       "name": "tls_loopback_identity",
       "status": "verified",
       "commit": "7e5a68a185431cc872ca7e6279be027efc1443a2",
-      "result": "22 local Python tests passed. Real loopback TLS rejects an untrusted certificate and wrong hostname before any sale, accepts a verified peer, deduplicates a sale and rejects the revoked device. Self-signed fixture certificate; remote deployment, enrollment and certificate lifecycle remain open."
+      "result": "22 tests passed on GitHub. Real loopback TLS rejected an untrusted certificate and wrong hostname before any sale, accepted a verified peer, deduplicated a sale and rejected a revoked device. Remote trust provisioning remains open.",
+      "run_id": 45869544280,
+      "job_id": 140081074815
+    },
+    {
+      "name": "checkpoint_snapshot_concurrency",
+      "status": "verified",
+      "commit": "04272134a84d758491442d31517154d8e2035c77",
+      "result": "23 local Python tests passed. In WAL mode, a second sale commits between the receipt and authorization reads while the checkpoint retains one consistent earlier snapshot."
     }
   ],
   "blockers": [
@@ -228,10 +238,9 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify TLS CI and remaining platform jobs; continue remote trust, recovery checkpoint integrity and V2 comparison under proof gates.",
+  "next_step": "Verify concurrency CI, investigate signed checkpoint authenticity and independent remote proof; preserve open production gates.",
   "changed_files": [
-    "proofs/sync/test_http_transport.py",
-    "proofs/README.md"
+    "proofs/sync/test_transport.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
