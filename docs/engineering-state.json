@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "65966a11c1a31b0dc2b17d079e024533f9f66720",
-  "code_sha": "65966a11c1a31b0dc2b17d079e024533f9f66720",
+  "last_content_commit": "790924f2840cde2278b94ab33cfdda6f68f67320",
+  "code_sha": "790924f2840cde2278b94ab33cfdda6f68f67320",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -275,6 +275,12 @@
       "result": "35 local Python tests passed. Under WAL, a concurrent sale commits while backup and every company checkpoint remain at one earlier snapshot; a newer trusted checkpoint rejects it. Existing destination is preserved and injected staging failure cleans up. Linux local fixture; platform filesystem and external checkpoint durability pending.",
       "run_id": 45871281256,
       "job_id": 140087035442
+    },
+    {
+      "name": "device_certificate_binding",
+      "status": "verified",
+      "commit": "790924f2840cde2278b94ab33cfdda6f68f67320",
+      "result": "38 local tests passed. A real loopback mutual-TLS fixture binds a verified client certificate to a device session, scoped search and sale. Wrong-device and missing client certificates, unbound sessions, revoked certificates and replay after reenrollment reject. Revocation serializes with sale; old certificate state is fenced during restore. Generated CA, enrollment and key custody are test fixtures; remote deployment and CI pending."
     }
   ],
   "blockers": [
@@ -282,11 +288,13 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Continue realistic device enrollment and scoped financial operations, exercise backup recovery on target platforms and benchmark matched V2 tasks. Approval gates remain open.",
+  "next_step": "Verify mutual TLS CI, then continue secure production enrollment and branch-scoped financial proof within existing design gates.",
   "changed_files": [
+    "proofs/README.md",
+    "proofs/search/scoped_search.py",
     "proofs/sync/authority_hub.py",
-    "proofs/sync/test_transport.py",
-    "proofs/README.md"
+    "proofs/sync/test_http_transport.py",
+    "proofs/sync/test_transport.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
