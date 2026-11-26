@@ -35,13 +35,19 @@ jobs:
           flutter config --no-analytics
           flutter create --project-name platform_proof --platforms=android,web,windows runtime_app
           cp proofs/platform-runtime/flutter_main.dart runtime_app/lib/main.dart
-          cp -r proofs/platform-runtime/{integration_test,test_driver} runtime_app
+          cp -r proofs/platform-runtime/integration_test runtime_app
           cd runtime_app
           flutter pub add 'sqflite:2.4.1' 'sqflite_common:2.5.5' 'sqflite_common_ffi:2.3.4+4' 'sqflite_common_ffi_web:0.4.5+4' 'dev:integration_test:{"sdk":"flutter"}'
-          flutter analyze lib integration_test test_driver
+          flutter analyze lib integration_test
       - if: matrix.target == 'windows'
         working-directory: runtime_app
         run: flutter test integration_test/durable_test.dart -d windows
+      - if: matrix.target == 'android'
+        name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-proof-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - if: matrix.target == 'android'
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
@@ -52,15 +58,9 @@ jobs:
         working-directory: runtime_app
         run: |
           dart run sqflite_common_ffi_web:setup
-          chromedriver --port=4444 > "${RUNNER_TEMP}/chromedriver.log" 2>&1 &
-          driver_pid=$!
-          trap 'kill "$driver_pid" 2>/dev/null || true; cat "${RUNNER_TEMP}/chromedriver.log"' EXIT
-          for attempt in {1..15}; do
-            if curl -fsS http://localhost:4444/status >/dev/null; then break; fi
-            sleep 1
-          done
-          curl -fsS http://localhost:4444/status >/dev/null
-          flutter drive --driver=test_driver/integration_test.dart --target=integration_test/durable_test.dart -d web-server --browser-name=chrome
+          flutter build web
+          python3 -m pip install --disable-pip-version-check playwright==1.52.0
+          python3 ../proofs/platform-runtime/web_reload.py build/web
   kotlin-windows:
     if: startsWith(github.ref, 'refs/heads/proof/')
     runs-on: windows-2022
@@ -84,10 +84,34 @@ jobs:
           $archive = Join-Path $work 'compiler.zip'
           Invoke-WebRequest 'https://github.com/JetBrains/kotlin/releases/download/v2.1.20/kotlin-compiler-2.1.20.zip' -OutFile $archive
           Expand-Archive $archive $work
-          $compiler = Join-Path $work 'kotlinc/bin/kotlinc.bat'
+          $lib = Join-Path $work 'kotlinc/lib'
+          $stdlib = Join-Path $lib 'kotlin-stdlib.jar'
           $dependencies = @((Join-Path $work 'sqlite-jvm.jar'), (Join-Path $work 'sqlite-bundled-jvm.jar')) -join ';'
           $jar = Join-Path $work 'proof.jar'
-          & $compiler proofs/platform-runtime/Runtime.kt proofs/platform-runtime/JvmMain.kt -cp $dependencies -include-runtime -d $jar
+          java -cp "$lib/*" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -no-stdlib -no-reflect -classpath "$stdlib;$dependencies" -d $jar proofs/platform-runtime/Runtime.kt proofs/platform-runtime/JvmMain.kt
           $database = Join-Path $work 'runtime.db'
-          java -cp "$jar;$dependencies" JvmMainKt $database seed
-          java -cp "$jar;$dependencies" JvmMainKt $database relaunch
+          java -cp "$jar;$stdlib;$dependencies" JvmMainKt $database seed
+          java -cp "$jar;$stdlib;$dependencies" JvmMainKt $database relaunch
+  kotlin-android:
+    if: startsWith(github.ref, 'refs/heads/proof/')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - name: Enable emulator acceleration
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-proof-kvm.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: ReactiveCircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          script: gradle -p proofs/platform-runtime/android connectedDebugAndroidTest --no-daemon --stacktrace

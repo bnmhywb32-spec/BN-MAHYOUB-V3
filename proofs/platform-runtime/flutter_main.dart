@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:sqflite_common/sqlite_api.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:sqflite/sqflite.dart' as mobile;
@@ -76,7 +75,13 @@ Future<String> proof({String path = 'bn_v3_runtime_proof.db'}) async {
 }
 void main() {
  WidgetsFlutterBinding.ensureInitialized();
- final result = proof();
+ final result = proof().then((message) {
+  debugPrint('BN_V3_PROOF: $message');
+  return message;
+ });
+ result.then<void>((_) {}, onError:(Object error) {
+  debugPrint('BN_V3_PROOF: FAIL: $error');
+ });
  runApp(MaterialApp(home:Scaffold(body:Center(
   child:FutureBuilder<String>(
    future:result,
