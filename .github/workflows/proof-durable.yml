@@ -20,8 +20,8 @@ jobs:
           curl -fsSL https://get.sdkman.io | bash
           source "$HOME/.sdkman/bin/sdkman-init.sh"
           sdk install kotlin 2.1.20
-          curl -fsSL https://repo.maven.apache.org/maven2/org/xerial/sqlite-jdbc/3.49.1.0/sqlite-jdbc-3.49.1.0.jar -o /tmp/sqlite.jar
-          curl -fsSL https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar -o /tmp/slf4j.jar
+          curl --retry 5 --retry-max-time 180 --connect-timeout 15 -fsSL https://repo.maven.apache.org/maven2/org/xerial/sqlite-jdbc/3.49.1.0/sqlite-jdbc-3.49.1.0.jar -o /tmp/sqlite.jar
+          curl --retry 5 --retry-max-time 180 --connect-timeout 15 -fsSL https://repo.maven.apache.org/maven2/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar -o /tmp/slf4j.jar
           kotlinc proofs/kotlin/Durable.kt -include-runtime -d /tmp/durable.jar
           java -cp /tmp/durable.jar:/tmp/sqlite.jar:/tmp/slf4j.jar DurableKt
   dart:
