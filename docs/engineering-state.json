@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "65a04d8b2a8d54b21235ed90f9e5f7b933053fec",
-  "code_sha": "65a04d8b2a8d54b21235ed90f9e5f7b933053fec",
+  "last_content_commit": "c8ba612de9cc673b2bad12f3fbf621edd0c5b696",
+  "code_sha": "c8ba612de9cc673b2bad12f3fbf621edd0c5b696",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -54,12 +54,6 @@
       "result": "5 tests passed; search p95 5.867 ms on in-memory synthetic fixture"
     },
     {
-      "name": "platform_runtime",
-      "status": "unverified",
-      "commit": "65a04d8b2a8d54b21235ed90f9e5f7b933053fec",
-      "restriction": "Flutter relaunch phase implemented. Android, Windows and web runtime with precision and reload evidence not exercised"
-    },
-    {
       "name": "cloud_http",
       "status": "blocked",
       "result": "Audit preflight reported missing isolated test configuration; no network requests"
@@ -67,6 +61,18 @@
     {
       "name": "CORE005_final_signoff",
       "status": "pending"
+    },
+    {
+      "name": "kotlin_runtime_relaunch_linux",
+      "status": "pass",
+      "commit": "c8ba612de9cc673b2bad12f3fbf621edd0c5b696",
+      "result": "Kotlin 2.1.20, AndroidX BundledSQLiteDriver 2.5.0 on Linux; two JVM processes verified sale, rollback, exact amounts and precision above 2^53"
+    },
+    {
+      "name": "platform_runtime_matrix",
+      "status": "unverified",
+      "commit": "c8ba612de9cc673b2bad12f3fbf621edd0c5b696",
+      "restriction": "Flutter Android/Windows/web drivers and Kotlin Windows JVM wired. Browser full reload and Kotlin Android/web require additional evidence."
     }
   ],
   "blockers": [
@@ -74,15 +80,15 @@
     "Prove trusted identity, revocation, accounting effects and ordered settlement over network transport; SQLite hub evidence covers allocation and receipt only",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Wire the runtime adapters into reproducible platform builds and run first launch, relaunch and exact-precision checks; retain the isolated gate until results are recorded.",
+  "next_step": "Exercise authenticated sale settlement and backup independently while platform runtime results are pending.",
   "changed_files": [
-    "AGENTS.md",
-    "docs/ENGINEERING-PLAYBOOK.md",
-    "proofs/README.md",
+    ".github/workflows/proof-runtime.yml",
+    "proofs/platform-runtime/JvmMain.kt",
+    "proofs/platform-runtime/Runtime.kt",
+    "proofs/platform-runtime/contract.md",
     "proofs/platform-runtime/flutter_main.dart",
-    "proofs/sync/authority_hub.py",
-    "proofs/sync/test_transport.py",
-    ".github/workflows/proof-local.yml"
+    "proofs/platform-runtime/integration_test/durable_test.dart",
+    "proofs/platform-runtime/test_driver/integration_test.dart"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
