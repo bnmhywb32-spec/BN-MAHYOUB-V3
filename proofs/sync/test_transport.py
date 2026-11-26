@@ -480,6 +480,49 @@ class TransportProof(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "^SYNC_DENIED$"):
                 restored.submit(token, "one", sale)
 
+    def test_restore_does_not_reinstate_revoked_search_branch(self):
+        self.hub.grant_search_branch("A", "seller", "1")
+        self.hub.issue_session("A", "seller")
+        path = self.path / "old-scope.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+        self.hub.revoke_search_branch("A", "seller", "1")
+        checkpoint = self.hub.recovery_checkpoint("A")
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_AUTHORIZATION_MISMATCH$"):
+            AuthorityHub.open_verified_backup(
+                path, {}, authorization={"A": checkpoint["authorization"]},
+                history={"A": checkpoint["history"]},
+            )
+
+    def test_restore_upgrades_snapshot_without_search_scope_table(self):
+        self.hub.issue_session("A", "seller")
+        checkpoint = self.hub.recovery_checkpoint("A")
+        path = self.path / "pre-scopes.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+            snapshot.execute("DROP TABLE search_scopes")
+            snapshot.commit()
+        restored = AuthorityHub.open_verified_backup(
+            path, {}, authorization={"A": checkpoint["authorization"]},
+            history={"A": checkpoint["history"]},
+        )
+        with closing(restored.db):
+            self.assertEqual(restored.db.execute("SELECT COUNT(*) FROM search_scopes").fetchone(), (0,))
+            self.assertEqual(restored.recovery_checkpoint("A"), checkpoint)
+
+    def test_restore_requires_checkpoints_for_companies_with_only_search_scopes(self):
+        path = self.path / "orphan-scope.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+            with snapshot:
+                snapshot.execute("INSERT INTO search_scopes VALUES ('B','device','branch')")
+        checkpoint = self.hub.recovery_checkpoint("A")
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_CHECKPOINT_REQUIRED$"):
+            AuthorityHub.open_verified_backup(
+                path, {}, authorization={"A": checkpoint["authorization"]},
+                history={"A": checkpoint["history"]},
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

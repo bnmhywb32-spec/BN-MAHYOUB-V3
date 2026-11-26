@@ -28,6 +28,10 @@ class AuthorityHub:
                 company TEXT, device TEXT, enabled INTEGER NOT NULL CHECK(enabled IN (0, 1)),
                 PRIMARY KEY(company, device)
             );
+            CREATE TABLE IF NOT EXISTS search_scopes(
+                company TEXT NOT NULL, device TEXT NOT NULL, branch TEXT NOT NULL,
+                PRIMARY KEY(company, device, branch)
+            );
             CREATE TABLE IF NOT EXISTS sessions(
                 digest TEXT PRIMARY KEY, company TEXT NOT NULL, device TEXT NOT NULL
             );
@@ -64,6 +68,10 @@ class AuthorityHub:
                 "SELECT company FROM balances UNION SELECT company FROM grants UNION "
                 "SELECT company FROM operations"
             )}
+            if snapshot.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='search_scopes'"
+            ).fetchone():
+                companies.update(row[0] for row in snapshot.execute("SELECT DISTINCT company FROM search_scopes"))
             posting_companies = {row[0] for row in snapshot.execute(
                 "SELECT DISTINCT company FROM operations"
             )}
@@ -89,6 +97,12 @@ class AuthorityHub:
             for company, expected in history.items():
                 if cls._history_digest(snapshot, company) != expected:
                     raise ValueError("RECOVERY_HISTORY_MISMATCH")
+            # Pre-scope snapshots contain no branch grants. Add the deny-by-default table.
+            snapshot.execute(
+                "CREATE TABLE IF NOT EXISTS search_scopes("
+                "company TEXT NOT NULL, device TEXT NOT NULL, branch TEXT NOT NULL, "
+                "PRIMARY KEY(company, device, branch))"
+            )
             snapshot.commit()
         except BaseException:
             snapshot.close()
@@ -130,7 +144,18 @@ class AuthorityHub:
             "SELECT device, resource, remaining FROM grants WHERE company=? ORDER BY device, resource",
             (company,),
         ).fetchall()
-        data = json.dumps([devices, sessions, balances, grants], separators=(",", ":")).encode()
+        records = [devices, sessions, balances, grants]
+        has_scopes = db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='search_scopes'"
+        ).fetchone()
+        if has_scopes:
+            scopes = db.execute(
+                "SELECT device, branch FROM search_scopes WHERE company=? ORDER BY device, branch",
+                (company,),
+            ).fetchall()
+            if scopes:
+                records.append(scopes)
+        data = json.dumps(records, separators=(",", ":")).encode()
         return hashlib.sha256(data).hexdigest()
 
     @staticmethod
@@ -210,6 +235,23 @@ class AuthorityHub:
     def revoke_session(self, token):
         with self.db:
             self.db.execute("DELETE FROM sessions WHERE digest=?", (self._digest(token),))
+
+    def grant_search_branch(self, company, device, branch):
+        # Administrative fixture. User enrollment and authority delegation remain open.
+        if not all(isinstance(value, str) and value for value in (company, device, branch)):
+            raise ValueError("INVALID_SCOPE")
+        with self.db:
+            self.db.execute("BEGIN IMMEDIATE")
+            self.db.execute("INSERT OR IGNORE INTO devices VALUES (?, ?, 1)", (company, device))
+            self._require_active_device(company, device)
+            self.db.execute("INSERT OR IGNORE INTO search_scopes VALUES (?, ?, ?)", (company, device, branch))
+
+    def revoke_search_branch(self, company, device, branch):
+        with self.db:
+            self.db.execute(
+                "DELETE FROM search_scopes WHERE company=? AND device=? AND branch=?",
+                (company, device, branch),
+            )
 
     def revoke_device(self, company, device):
         with self.db:
