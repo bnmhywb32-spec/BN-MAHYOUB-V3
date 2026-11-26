@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "a4c28af6e138a8007db2ca4b2ba6c68dd3254cd8",
-  "code_sha": "a4c28af6e138a8007db2ca4b2ba6c68dd3254cd8",
+  "last_content_commit": "fce3446cdff2b3d342a16aabc4e0717e001cb650",
+  "code_sha": "fce3446cdff2b3d342a16aabc4e0717e001cb650",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -155,6 +155,12 @@
       "status": "pass",
       "commit": "a4c28af6e138a8007db2ca4b2ba6c68dd3254cd8",
       "result": "Local Chromium: 100,000-row catalog, same sale contract, first-write abort, abort over committed snapshot, successful replay after reload, and coordinated two-tab startup all verified. Whole-snapshot experiment; CI pending."
+    },
+    {
+      "name": "restore_authorization_checkpoint",
+      "status": "pass",
+      "commit": "fce3446cdff2b3d342a16aabc4e0717e001cb650",
+      "result": "16 local Python tests passed. A pre-revocation snapshot with the correct latest receipt is rejected by a separately supplied authorization fingerprint. Production retention/authentication of checkpoints remains unverified."
     }
   ],
   "blockers": [
@@ -164,12 +170,8 @@
   ],
   "next_step": "Compare transactional browser adapters against the measured catalog, complete matched V2 tasks, and independently review remote trust and offline reservation reconciliation.",
   "changed_files": [
-    ".github/workflows/proof-runtime.yml",
-    "proofs/platform-runtime/contract.md",
-    "proofs/platform-runtime/web/src/main/kotlin/WebMain.kt",
-    "proofs/platform-runtime/web/src/main/resources/index.html",
-    "proofs/platform-runtime/web/src/main/resources/proof-store.js",
-    "proofs/platform-runtime/web_reload.py"
+    "proofs/sync/authority_hub.py",
+    "proofs/sync/test_transport.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
