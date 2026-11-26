@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "0c3f51243c99044072504b8d5489ac6d3dd16497",
-  "code_sha": "0c3f51243c99044072504b8d5489ac6d3dd16497",
+  "last_content_commit": "b250b98e0a4068ea08f160ee4997336336c961d1",
+  "code_sha": "b250b98e0a4068ea08f160ee4997336336c961d1",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -194,6 +194,12 @@
       "status": "pending",
       "commit": "0c3f51243c99044072504b8d5489ac6d3dd16497",
       "result": "Kotlin and Dart reference half-up postings and six matching boundary cases added. Dart reference rejects unsafe JS integer outputs; full cross-platform numeric contract, durable parity and overflow tests remain open."
+    },
+    {
+      "name": "durable_fractional_boundaries",
+      "status": "pending",
+      "commit": "b250b98e0a4068ea08f160ee4997336336c961d1",
+      "result": "Exact BigInteger/BigInt intermediate arithmetic, native signed 64-bit bounds, five additional persisted fractional fixtures plus existing 125 fixture. CI and web numeric transport not verified."
     }
   ],
   "blockers": [
@@ -201,10 +207,10 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify reference CI, extend exact rounding boundary fixtures to durable and runtime adapters, and validate incremental browser storage integrity.",
+  "next_step": "Verify reference and durable CI; extend exact numeric transport to platform runtime and add browser chunk integrity tests.",
   "changed_files": [
-    "proofs/kotlin/Reference.kt",
-    "proofs/flutter/reference.dart"
+    "proofs/kotlin/Durable.kt",
+    "proofs/flutter/durable.dart"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
