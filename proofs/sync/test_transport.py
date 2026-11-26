@@ -523,6 +523,75 @@ class TransportProof(unittest.TestCase):
                 history={"A": checkpoint["history"]},
             )
 
+    def test_online_backup_and_checkpoints_share_a_snapshot(self):
+        self.hub.db.execute("PRAGMA journal_mode=WAL")
+        self.hub.seed("A", "stock", 2)
+        self.hub.allocate("A", "seller", "stock", 2)
+        token = self.hub.issue_session("A", "seller", can_submit=True)
+        sale = {"kind": "sale", "resource": "stock", "amount": 1}
+        self.hub.submit(token, "first", sale)
+        expected = self.hub.recovery_checkpoint("A")
+        reached = Event()
+        proceed = Event()
+        original = AuthorityHub._capture_checkpoint
+
+        def pause_during_backup(reader, company):
+            result = original(reader, company)
+            reached.set()
+            if not proceed.wait(5):
+                raise TimeoutError("Backup reader was not released")
+            return result
+
+        path = self.path / "consistent-backup.db"
+
+        def backup():
+            reader = AuthorityHub(self.path / "hub.db")
+            try:
+                return reader.create_consistent_backup(path)
+            finally:
+                reader.db.close()
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            with patch.object(AuthorityHub, "_capture_checkpoint", pause_during_backup):
+                pending = pool.submit(backup)
+                try:
+                    self.assertTrue(reached.wait(5))
+                    self.hub.submit(token, "second", sale)
+                finally:
+                    proceed.set()
+                checkpoints = pending.result(timeout=5)
+        self.assertEqual(checkpoints, {"A": expected})
+        restored = AuthorityHub.open_verified_backup(
+            path, {"A": expected["receipt"]},
+            authorization={"A": expected["authorization"]}, history={"A": expected["history"]},
+        )
+        with closing(restored.db):
+            self.assertEqual(restored.recovery_checkpoint("A"), expected)
+            self.assertEqual(restored.db.execute("SELECT COUNT(*) FROM operations").fetchone(), (1,))
+        latest = self.hub.recovery_checkpoint("A")
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_CHECKPOINT_MISMATCH$"):
+            AuthorityHub.open_verified_backup(
+                path, {"A": latest["receipt"]},
+                authorization={"A": latest["authorization"]}, history={"A": latest["history"]},
+            )
+        before = path.read_bytes()
+        with self.assertRaises(FileExistsError):
+            self.hub.create_consistent_backup(path)
+        self.assertEqual(path.read_bytes(), before)
+        self.assertEqual(list(self.path.glob(".v3-proof-backup-*")), [])
+
+    def test_failed_backup_leaves_no_published_file_or_open_transaction(self):
+        self.hub.issue_session("A", "seller")
+        path = self.path / "failed.db"
+        with patch("proofs.sync.authority_hub.sqlite3.connect",
+                   side_effect=sqlite3.OperationalError("injected storage failure")):
+            with self.assertRaisesRegex(sqlite3.OperationalError, "injected storage failure"):
+                self.hub.create_consistent_backup(path)
+        self.assertFalse(path.exists())
+        self.assertFalse(self.hub.db.in_transaction)
+        self.assertEqual(list(self.path.glob(".v3-proof-backup-*")), [])
+        self.assertIsNone(self.hub.recovery_checkpoint("A")["receipt"])
+
 
 if __name__ == "__main__":
     unittest.main()

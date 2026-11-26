@@ -2,8 +2,10 @@
 
 import hashlib
 import json
+import os
 import secrets
 import sqlite3
+import tempfile
 from itertools import groupby
 from pathlib import Path
 
@@ -171,19 +173,51 @@ class AuthorityHub:
             digest.update(record)
         return digest.hexdigest()
 
+    def _capture_checkpoint(self, company):
+        row = self.db.execute(
+            "SELECT id, payload, revision, received_at FROM operations "
+            "WHERE company=? ORDER BY revision DESC LIMIT 1", (company,)
+        ).fetchone()
+        return {
+            "receipt": self._receipt(company, *row) if row else None,
+            "authorization": self._authorization_digest(self.db, company),
+            "history": self._history_digest(self.db, company),
+        }
+
     def recovery_checkpoint(self, company):
         """Capture one company's latest receipt and trust fingerprints in one read transaction."""
         with self.db:
             self.db.execute("BEGIN")
-            row = self.db.execute(
-                "SELECT id, payload, revision, received_at FROM operations "
-                "WHERE company=? ORDER BY revision DESC LIMIT 1", (company,)
-            ).fetchone()
-            return {
-                "receipt": self._receipt(company, *row) if row else None,
-                "authorization": self._authorization_digest(self.db, company),
-                "history": self._history_digest(self.db, company),
-            }
+            return self._capture_checkpoint(company)
+
+    def create_consistent_backup(self, path):
+        """Publish an exclusive backup and return checkpoints from the same SQLite snapshot."""
+        target = Path(path)
+        descriptor, partial_name = tempfile.mkstemp(prefix=".v3-proof-backup-", dir=target.parent)
+        os.close(descriptor)
+        try:
+            with self.db:
+                self.db.execute("BEGIN")
+                companies = [row[0] for row in self.db.execute(
+                    "SELECT company FROM devices UNION SELECT company FROM sessions UNION "
+                    "SELECT company FROM balances UNION SELECT company FROM grants UNION "
+                    "SELECT company FROM operations UNION SELECT company FROM search_scopes"
+                )]
+                if not companies:
+                    raise ValueError("RECOVERY_CHECKPOINT_REQUIRED")
+                checkpoints = {company: self._capture_checkpoint(company) for company in companies}
+                destination = sqlite3.connect(partial_name)
+                try:
+                    self.db.backup(destination)
+                    if destination.execute("PRAGMA integrity_check").fetchall() != [("ok",)]:
+                        raise ValueError("RECOVERY_CORRUPT")
+                finally:
+                    destination.close()
+            # Linking is atomic and refuses to overwrite a pre-existing destination.
+            os.link(partial_name, target)
+            return checkpoints
+        finally:
+            os.unlink(partial_name)
 
     def authorization_checkpoint(self, company):
         """Capture authorization and reserved balances for independent retention."""
