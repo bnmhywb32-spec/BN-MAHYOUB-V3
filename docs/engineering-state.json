@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "2b48b8e507ea0ad07d69074a3eba48798b50a3e7",
-  "code_sha": "2b48b8e507ea0ad07d69074a3eba48798b50a3e7",
+  "last_content_commit": "13bdfd8aff2ae9d7a01ea2ca26cc2b5ac7160803",
+  "code_sha": "13bdfd8aff2ae9d7a01ea2ca26cc2b5ac7160803",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -64,8 +64,9 @@
     {
       "name": "platform_runtime_matrix",
       "status": "unverified",
-      "commit": "c8ba612de9cc673b2bad12f3fbf621edd0c5b696",
-      "restriction": "Flutter Android/Windows/web drivers and Kotlin Windows JVM wired. Browser full reload and Kotlin Android/web require additional evidence."
+      "commit": "13bdfd8aff2ae9d7a01ea2ca26cc2b5ac7160803",
+      "restriction": "Run 45817878254 failed at Flutter analysis and Kotlin Windows classpath. Fixed those runner failures, added Chromium reload and Android Kotlin tests; corrected matrix unverified.",
+      "previous_run_id": 45817878254
     },
     {
       "name": "python_local_transport_authority_search",
@@ -80,11 +81,17 @@
     "Exercise identity enrollment and revocation, reservation recovery, ledger settlement and ordered receipts over a real network; current authenticated assertion is local.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Diagnose platform CI results and extend the network and platform-runtime proofs.",
+  "next_step": "Inspect corrected runtime runs while exercising local network transport.",
   "changed_files": [
-    "proofs/README.md",
-    "proofs/sync/authority_hub.py",
-    "proofs/sync/test_transport.py"
+    ".github/workflows/proof-runtime.yml",
+    "proofs/platform-runtime/android/build.gradle.kts",
+    "proofs/platform-runtime/android/gradle.properties",
+    "proofs/platform-runtime/android/settings.gradle.kts",
+    "proofs/platform-runtime/android/src/androidTest/kotlin/proof/runtime/RuntimeTest.kt",
+    "proofs/platform-runtime/android/src/main/AndroidManifest.xml",
+    "proofs/platform-runtime/flutter_main.dart",
+    "proofs/platform-runtime/test_driver/integration_test.dart",
+    "proofs/platform-runtime/web_reload.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
