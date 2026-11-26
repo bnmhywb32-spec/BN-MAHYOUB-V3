@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "185b54793d2ce92307e19ca414f80987de9701d1",
-  "code_sha": "185b54793d2ce92307e19ca414f80987de9701d1",
+  "last_content_commit": "660cead261976be4d19428355d9e53bfb87bdfe0",
+  "code_sha": "660cead261976be4d19428355d9e53bfb87bdfe0",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -246,6 +246,12 @@
       "status": "verified",
       "commit": "185b54793d2ce92307e19ca414f80987de9701d1",
       "result": "25 local tests passed. A separate HMAC fixture rejects modified, cross-company, wrong-key and previously valid stale checkpoints, then verifies recovery and the revoked device. Trusted latest signature and signing key are injected by the test; real independent provisioning remains open."
+    },
+    {
+      "name": "arabic_search_migration",
+      "status": "verified",
+      "commit": "660cead261976be4d19428355d9e53bfb87bdfe0",
+      "result": "28 local Python tests passed before final barcode-collision assertion; 8 search tests passed after it. Arabic elongation/diacritics and Arabic/Western barcode digits normalized with exact spelling priority. Interrupted legacy upgrade rolled back and unknown newer version rejected. 100,000-row legacy disk upgrade took 2.233 s, subsequent query p95 48.031 ms in one local synthetic run. Authentication and user-task comparison remain open."
     }
   ],
   "blockers": [
@@ -253,10 +259,9 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify CI and continue examining independently provisioned device identity, checkpoint key lifecycle, failure recovery and V2 task comparison.",
+  "next_step": "Verify search CI and continue engineering evidence for secure independent devices, browser durability and matched V2 tasks.",
   "changed_files": [
-    "proofs/sync/checkpoint_auth.py",
-    "proofs/sync/test_transport.py",
+    "proofs/search/local_search.py",
     "proofs/README.md"
   ],
   "related_review": {
