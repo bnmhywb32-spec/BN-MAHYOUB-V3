@@ -98,10 +98,10 @@
     {
       "name": "python_transport_ci",
       "status": "pass",
-      "commit": "3e15db487fdcfb9f77d02f276aeb2fdc487b7d72",
-      "run_id": 45822841202,
-      "job_id": 139919254686,
-      "result": "14 passed. CI p95 settlement 0.523 ms (100 synthetic sales), search 6.918 ms in memory."
+      "commit": "d5c17a230445217d3e55aa14359df22f23bea53e",
+      "run_id": 45824177826,
+      "job_id": 139923921480,
+      "result": "15 passed; CI p95 settlement 0.531 ms (100 synthetic sales), in-memory search 6.880 ms."
     },
     {
       "name": "search_index_build_comparison",
