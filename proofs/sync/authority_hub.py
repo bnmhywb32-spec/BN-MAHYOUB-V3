@@ -1,12 +1,15 @@
-"""SQLite proof of bounded allocations and ordered settlement under a trusted session fixture."""
+"""SQLite proof of bounded allocations and ordered settlement under isolated device sessions."""
 
+import hashlib
 import json
+import secrets
 import sqlite3
 
 
 class AuthorityHub:
     def __init__(self, path):
         self.db = sqlite3.connect(path)
+        self.db.execute("PRAGMA foreign_keys = ON")
         self.db.executescript("""
             CREATE TABLE IF NOT EXISTS balances(
                 company TEXT, resource TEXT, free INTEGER NOT NULL CHECK(free >= 0),
@@ -17,10 +20,19 @@ class AuthorityHub:
                 remaining INTEGER NOT NULL CHECK(remaining >= 0),
                 PRIMARY KEY(company, device, resource)
             );
+            CREATE TABLE IF NOT EXISTS sessions(
+                digest TEXT PRIMARY KEY, company TEXT NOT NULL, device TEXT NOT NULL
+            );
             CREATE TABLE IF NOT EXISTS operations(
                 company TEXT, id TEXT, device TEXT NOT NULL, revision INTEGER NOT NULL,
                 payload TEXT NOT NULL, received_at TEXT NOT NULL,
                 PRIMARY KEY(company, id), UNIQUE(company, revision)
+            );
+            CREATE TABLE IF NOT EXISTS journal(
+                company TEXT NOT NULL, operation_id TEXT NOT NULL, account TEXT NOT NULL,
+                amount INTEGER NOT NULL CHECK(typeof(amount)='integer'),
+                PRIMARY KEY(company, operation_id, account),
+                FOREIGN KEY(company, operation_id) REFERENCES operations(company, id)
             );
         """)
 
@@ -45,17 +57,69 @@ class AuthorityHub:
         if type(amount) is not int or not 0 < amount <= 2**63 - 1:
             raise ValueError("INVALID_AMOUNT")
 
-    def submit(self, session, operation_id, payload):
-        company, device = session
-        if not isinstance(payload, dict) or set(payload) != {"resource", "amount"}:
+    @staticmethod
+    def _digest(token):
+        if not isinstance(token, str) or len(token) != 43:
+            raise ValueError("SYNC_DENIED")
+        return hashlib.sha256(token.encode()).hexdigest()
+
+    def issue_session(self, company, device):
+        # Administrative fixture; a production issuer would authenticate the user and device.
+        token = secrets.token_urlsafe(32)
+        with self.db:
+            self.db.execute("INSERT INTO sessions VALUES (?, ?, ?)", (self._digest(token), company, device))
+        return token
+
+    def revoke_session(self, token):
+        with self.db:
+            self.db.execute("DELETE FROM sessions WHERE digest=?", (self._digest(token),))
+
+    def _scope(self, token):
+        scope = self.db.execute(
+            "SELECT company, device FROM sessions WHERE digest=?", (self._digest(token),)
+        ).fetchone()
+        if scope is None:
+            raise ValueError("SYNC_DENIED")
+        return scope
+
+    def pull(self, token, after=0):
+        if type(after) is not int or not 0 <= after <= 2**63 - 1:
+            raise ValueError("INVALID_REVISION")
+        with self.db:
+            self.db.execute("BEGIN")
+            company, _ = self._scope(token)
+            rows = self.db.execute(
+                "SELECT id, payload, revision, received_at FROM operations "
+                "WHERE company=? AND revision>? ORDER BY revision LIMIT 100",
+                (company, after),
+            ).fetchall()
+            return [self._receipt(op, body, rev, stamp) for op, body, rev, stamp in rows]
+
+    @staticmethod
+    def _receipt(operation_id, body, revision, received_at):
+        return dict(operation_id=operation_id, payload=json.loads(body),
+                    revision=revision, received_at=received_at)
+
+    def submit(self, token, operation_id, payload):
+        if not isinstance(operation_id, str) or not 0 < len(operation_id) <= 128:
+            raise ValueError("INVALID_OPERATION")
+        if not isinstance(payload, dict) or set(payload) not in (
+            {"resource", "amount"}, {"resource", "amount", "kind"}
+        ):
             raise ValueError("INVALID_PAYLOAD")
         resource, amount = payload["resource"], payload["amount"]
         if not isinstance(resource, str) or not resource:
             raise ValueError("INVALID_PAYLOAD")
         self._positive(amount)
+        sale = "kind" in payload
+        if sale and (payload["kind"] != "sale" or resource != "stock"):
+            raise ValueError("INVALID_PAYLOAD")
+        if sale and amount > (2**63 - 1) // 100:
+            raise ValueError("INVALID_AMOUNT")
         body = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         with self.db:
             self.db.execute("BEGIN IMMEDIATE")
+            company, device = self._scope(token)
             grant = self.db.execute(
                 "SELECT 1 FROM grants WHERE company=? AND device=? AND resource=?",
                 (company, device, resource),
@@ -87,4 +151,12 @@ class AuthorityHub:
                     "INSERT INTO operations VALUES (?, ?, ?, ?, ?, ?)",
                     (company, operation_id, device, revision, body, received_at),
                 )
-            return dict(operation_id=operation_id, payload=payload, revision=revision, received_at=received_at)
+                if sale:
+                    self.db.executemany(
+                        "INSERT INTO journal VALUES (?, ?, ?, ?)",
+                        [(company, operation_id, account, value) for account, value in (
+                            ("cash", amount * 100), ("revenue", -amount * 100),
+                            ("cogs", amount * 60), ("inventory", -amount * 60),
+                        )],
+                    )
+            return self._receipt(operation_id, body, revision, received_at)

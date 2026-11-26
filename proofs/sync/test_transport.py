@@ -1,4 +1,6 @@
+import sqlite3
 import tempfile
+import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -32,11 +34,14 @@ class TransportProof(unittest.TestCase):
         pb = {"resource": "cash", "amount": 40}
         qa.enqueue(pa, "pay-a")
         qb.enqueue(pb, "pay-b")
-        first = self.hub.submit(("A", "a"), "pay-a", pa)
+        session_a = self.hub.issue_session("A", "a")
+        session_b = self.hub.issue_session("A", "b")
+        other_session = self.hub.issue_session("B", "a")
+        first = self.hub.submit(session_a, "pay-a", pa)
         # Drop the first reply and recover the pending operation from disk.
         restarted = self.queue("a.db")
         self.assertEqual(len(restarted.pending()), 1)
-        retry = self.hub.submit(("A", "a"), "pay-a", pa)
+        retry = self.hub.submit(session_a, "pay-a", pa)
         self.assertEqual(retry, first)
         restarted.acknowledge("pay-a", retry)
         self.assertEqual(qa.pending(), [])
@@ -45,12 +50,12 @@ class TransportProof(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "^SYNC_CONFLICT$"):
             qa.enqueue(pb, "pay-a")
         with self.assertRaisesRegex(ValueError, "^SYNC_DENIED$"):
-            self.hub.submit(("B", "a"), "pay-a", pa)
+            self.hub.submit(other_session, "pay-a", pa)
         with self.assertRaisesRegex(ValueError, "^SYNC_CONFLICT$"):
-            self.hub.submit(("A", "b"), "pay-a", pa)
+            self.hub.submit(session_b, "pay-a", pa)
         with self.assertRaisesRegex(ValueError, "^AUTHORITY_LIMIT$"):
-            self.hub.submit(("A", "a"), "extra", {"resource": "cash", "amount": 1})
-        second = self.hub.submit(("A", "b"), "pay-b", pb)
+            self.hub.submit(session_a, "extra", {"resource": "cash", "amount": 1})
+        second = self.hub.submit(session_b, "pay-b", pb)
         qb.acknowledge("pay-b", second)
         self.assertEqual([first["revision"], second["revision"]], [1, 2])
         gap = dict(second, revision=3)
@@ -59,7 +64,8 @@ class TransportProof(unittest.TestCase):
         self.assertEqual(qb.revision(), 0)
         self.assertEqual(qb.db.execute("SELECT COUNT(*) FROM inbox").fetchone()[0], 0)
         qb.receive([first])
-        qb.receive([first, second])
+        qb.receive(self.hub.pull(session_b))
+        self.assertEqual(self.hub.pull(other_session), [])
         with self.assertRaisesRegex(ValueError, "^SYNC_REPLAY_CONFLICT$"):
             qb.receive([dict(first, payload=pb)])
         self.assertEqual(qb.revision(), 2)
@@ -83,11 +89,63 @@ class TransportProof(unittest.TestCase):
             winners = [device for device in pool.map(allocate, ("a", "b")) if device]
         self.assertEqual(len(winners), 1)
         winner = winners[0]
+        session = self.hub.issue_session("A", winner)
         command = {"resource": "stock", "amount": 1}
-        receipt = self.hub.submit(("A", winner), "last-stock", command)
+        receipt = self.hub.submit(session, "last-stock", command)
         self.assertEqual(receipt["revision"], 1)
         with self.assertRaisesRegex(ValueError, "^AUTHORITY_LIMIT$"):
-            self.hub.submit(("A", winner), "extra", command)
+            self.hub.submit(session, "extra", command)
+
+    def test_atomic_sale_and_authorization_survive_backup(self):
+        self.hub.seed("A", "stock", 2)
+        self.hub.allocate("A", "a", "stock", 2)
+        session = self.hub.issue_session("A", "a")
+        revoked = self.hub.issue_session("A", "a")
+        self.hub.revoke_session(revoked)
+        queue = self.queue("sale.db")
+        payload = {"kind": "sale", "resource": "stock", "amount": 2}
+        queue.enqueue(payload, "sale")
+        with self.assertRaisesRegex(ValueError, "^SYNC_DENIED$"):
+            self.hub.submit(revoked, "sale", payload)
+        self.hub.db.execute("""
+            CREATE TEMP TRIGGER fail_journal BEFORE INSERT ON journal
+            WHEN NEW.account='cogs' BEGIN SELECT RAISE(ABORT, 'injected journal failure'); END
+        """)
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "^injected journal failure$"):
+            self.hub.submit(session, "sale", payload)
+        self.assertEqual(self.hub.pull(session), [])
+        self.assertEqual(self.hub.db.execute("SELECT COUNT(*) FROM journal").fetchone(), (0,))
+        self.assertEqual(self.hub.db.execute("SELECT remaining FROM grants").fetchone(), (2,))
+        self.assertEqual(len(queue.pending()), 1)
+        self.hub.db.execute("DROP TRIGGER fail_journal")
+        start = time.perf_counter()
+        first = self.hub.submit(session, "sale", payload)
+        settlement_ms = (time.perf_counter() - start) * 1000
+        self.assertEqual(first["revision"], 1)
+        backup_path = self.path / "restored.db"
+        start = time.perf_counter()
+        backup = sqlite3.connect(backup_path)
+        try:
+            self.hub.db.backup(backup)
+            self.assertEqual(backup.execute("PRAGMA integrity_check").fetchone(), ("ok",))
+        finally:
+            backup.close()
+        restored = AuthorityHub(backup_path)
+        self.addCleanup(restored.db.close)
+        retry = restored.submit(session, "sale", payload)
+        restore_ms = (time.perf_counter() - start) * 1000
+        self.assertEqual(retry, first)
+        queue.acknowledge("sale", retry)
+        queue.receive(restored.pull(session))
+        self.assertEqual(queue.pending(), [])
+        self.assertEqual(queue.revision(), 1)
+        self.assertEqual(restored.db.execute("SELECT remaining FROM grants").fetchone(), (0,))
+        rows = dict(restored.db.execute("SELECT account, amount FROM journal"))
+        self.assertEqual(rows, {"cash": 200, "revenue": -200, "cogs": 120, "inventory": -120})
+        self.assertEqual(sum(rows.values()), 0)
+        with self.assertRaisesRegex(ValueError, "^SYNC_DENIED$"):
+            restored.pull(revoked)
+        print(f"single local settlement={settlement_ms:.3f} ms; backup + integrity + replay={restore_ms:.3f} ms")
 
 
 if __name__ == "__main__":
