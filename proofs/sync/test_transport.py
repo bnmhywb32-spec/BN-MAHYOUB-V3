@@ -289,6 +289,22 @@ class TransportProof(unittest.TestCase):
                 path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")}
             )
 
+    def test_restore_rejects_sqlite_valid_snapshot_with_missing_journal_entry(self):
+        self.hub.seed("A", "stock", 1)
+        self.hub.allocate("A", "seller", "stock", 1)
+        token = self.hub.issue_session("A", "seller", can_submit=True)
+        receipt = self.hub.submit(token, "one", {"kind": "sale", "resource": "stock", "amount": 1})
+        path = self.path / "missing-posting.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+            with snapshot:
+                snapshot.execute("DELETE FROM journal WHERE account='cash'")
+            self.assertEqual(snapshot.execute("PRAGMA integrity_check").fetchone(), ("ok",))
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_JOURNAL_MISMATCH$"):
+            AuthorityHub.open_verified_backup(
+                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")}
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

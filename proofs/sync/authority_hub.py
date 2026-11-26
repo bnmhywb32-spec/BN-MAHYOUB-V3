@@ -4,6 +4,7 @@ import hashlib
 import json
 import secrets
 import sqlite3
+from itertools import groupby
 from pathlib import Path
 
 from proofs.sync.sale import MAX_SALE_QUANTITY, sale_journal
@@ -78,9 +79,26 @@ class AuthorityHub:
             for company, expected in authorization.items():
                 if cls._authorization_digest(snapshot, company) != expected:
                     raise ValueError("RECOVERY_AUTHORIZATION_MISMATCH")
+            cls._verify_recovered_journal(snapshot)
         finally:
             snapshot.close()
         return cls(path)
+
+    @staticmethod
+    def _verify_recovered_journal(db):
+        if db.execute("PRAGMA foreign_key_check").fetchone() is not None:
+            raise ValueError("RECOVERY_JOURNAL_MISMATCH")
+        rows = db.execute(
+            "SELECT o.company, o.id, o.payload, j.account, j.amount FROM operations AS o "
+            "LEFT JOIN journal AS j ON j.company=o.company AND j.operation_id=o.id "
+            "ORDER BY o.company, o.id, j.account"
+        )
+        for (_, _, body), postings in groupby(rows, key=lambda row: row[:3]):
+            payload = json.loads(body)
+            expected = sale_journal(payload["amount"]) if payload.get("kind") == "sale" else ()
+            actual = tuple((account, amount) for *_, account, amount in postings if account is not None)
+            if actual != tuple(sorted(expected)):
+                raise ValueError("RECOVERY_JOURNAL_MISMATCH")
 
     @staticmethod
     def _authorization_digest(db, company):
