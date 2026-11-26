@@ -34,8 +34,8 @@ class TransportProof(unittest.TestCase):
         pb = {"resource": "cash", "amount": 40}
         qa.enqueue(pa, "pay-a")
         qb.enqueue(pb, "pay-b")
-        session_a = self.hub.issue_session("A", "a")
-        session_b = self.hub.issue_session("A", "b")
+        session_a = self.hub.issue_session("A", "a", can_submit=True)
+        session_b = self.hub.issue_session("A", "b", can_submit=True)
         other_session = self.hub.issue_session("B", "a")
         first = self.hub.submit(session_a, "pay-a", pa)
         # Drop the first reply and recover the pending operation from disk.
@@ -89,7 +89,7 @@ class TransportProof(unittest.TestCase):
             winners = [device for device in pool.map(allocate, ("a", "b")) if device]
         self.assertEqual(len(winners), 1)
         winner = winners[0]
-        session = self.hub.issue_session("A", winner)
+        session = self.hub.issue_session("A", winner, can_submit=True)
         command = {"resource": "stock", "amount": 1}
         receipt = self.hub.submit(session, "last-stock", command)
         self.assertEqual(receipt["revision"], 1)
@@ -99,8 +99,8 @@ class TransportProof(unittest.TestCase):
     def test_atomic_sale_and_authorization_survive_backup(self):
         self.hub.seed("A", "stock", 2)
         self.hub.allocate("A", "a", "stock", 2)
-        session = self.hub.issue_session("A", "a")
-        revoked = self.hub.issue_session("A", "a")
+        session = self.hub.issue_session("A", "a", can_submit=True)
+        revoked = self.hub.issue_session("A", "a", can_submit=True)
         self.hub.revoke_session(revoked)
         queue = self.queue("sale.db")
         payload = {"kind": "sale", "resource": "stock", "amount": 2}
@@ -118,10 +118,20 @@ class TransportProof(unittest.TestCase):
         self.assertEqual(self.hub.db.execute("SELECT remaining FROM grants").fetchone(), (2,))
         self.assertEqual(len(queue.pending()), 1)
         self.hub.db.execute("DROP TRIGGER fail_journal")
+        stale = self.path / "stale.db"
+        stale_db = sqlite3.connect(stale)
+        try:
+            self.hub.db.backup(stale_db)
+        finally:
+            stale_db.close()
         start = time.perf_counter()
         first = self.hub.submit(session, "sale", payload)
         settlement_ms = (time.perf_counter() - start) * 1000
         self.assertEqual(first["revision"], 1)
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_CHECKPOINT_MISMATCH$"):
+            AuthorityHub.open_verified_backup(stale, {"A": first})
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_CHECKPOINT_REQUIRED$"):
+            AuthorityHub.open_verified_backup(stale, {})
         backup_path = self.path / "restored.db"
         start = time.perf_counter()
         backup = sqlite3.connect(backup_path)
@@ -130,7 +140,7 @@ class TransportProof(unittest.TestCase):
             self.assertEqual(backup.execute("PRAGMA integrity_check").fetchone(), ("ok",))
         finally:
             backup.close()
-        restored = AuthorityHub(backup_path)
+        restored = AuthorityHub.open_verified_backup(backup_path, {"A": first})
         self.addCleanup(restored.db.close)
         retry = restored.submit(session, "sale", payload)
         restore_ms = (time.perf_counter() - start) * 1000
@@ -167,7 +177,7 @@ class TransportProof(unittest.TestCase):
         count = 100
         self.hub.seed("A", "stock", count)
         self.hub.allocate("A", "seller", "stock", count)
-        token = self.hub.issue_session("A", "seller")
+        token = self.hub.issue_session("A", "seller", can_submit=True)
         sale = {"kind": "sale", "resource": "stock", "amount": 1}
         times = []
         for index in range(count):

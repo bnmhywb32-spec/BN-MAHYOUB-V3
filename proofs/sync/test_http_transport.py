@@ -68,9 +68,9 @@ class HttpTransportProof(unittest.TestCase):
         self.addCleanup(queue.close)
         hub.seed("A", "stock", 2)
         hub.allocate("A", "seller", "stock", 2)
-        token = hub.issue_session("A", "seller")
-        observer = hub.issue_session("A", "observer")
-        other = hub.issue_session("B", "seller")
+        token = hub.issue_session("A", "seller", can_submit=True)
+        observer = hub.issue_session("A", "seller")
+        other = hub.issue_session("B", "seller", can_submit=True)
         payload = {"kind": "sale", "resource": "stock", "amount": 2}
         queue.enqueue(payload, "sale")
 

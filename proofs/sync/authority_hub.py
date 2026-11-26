@@ -4,6 +4,7 @@ import hashlib
 import json
 import secrets
 import sqlite3
+from pathlib import Path
 
 
 class AuthorityHub:
@@ -27,6 +28,9 @@ class AuthorityHub:
             CREATE TABLE IF NOT EXISTS sessions(
                 digest TEXT PRIMARY KEY, company TEXT NOT NULL, device TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS session_writers(
+                digest TEXT PRIMARY KEY REFERENCES sessions(digest) ON DELETE CASCADE
+            );
             CREATE TABLE IF NOT EXISTS operations(
                 company TEXT, id TEXT, device TEXT NOT NULL, revision INTEGER NOT NULL,
                 payload TEXT NOT NULL, received_at TEXT NOT NULL,
@@ -39,6 +43,28 @@ class AuthorityHub:
                 FOREIGN KEY(company, operation_id) REFERENCES operations(company, id)
             );
         """)
+
+    @classmethod
+    def open_verified_backup(cls, path, checkpoints):
+        """Open a staged snapshot only if independently retained receipts are present."""
+        if not checkpoints:
+            raise ValueError("RECOVERY_CHECKPOINT_REQUIRED")
+        uri = Path(path).resolve().as_uri() + "?mode=ro"
+        snapshot = sqlite3.connect(uri, uri=True)
+        try:
+            if snapshot.execute("PRAGMA integrity_check").fetchall() != [("ok",)]:
+                raise ValueError("RECOVERY_CORRUPT")
+            for company, expected in checkpoints.items():
+                row = snapshot.execute(
+                    "SELECT id, payload, revision, received_at FROM operations "
+                    "WHERE company=? AND revision=?",
+                    (company, expected["revision"]),
+                ).fetchone()
+                if row is None or cls._receipt(*row) != expected:
+                    raise ValueError("RECOVERY_CHECKPOINT_MISMATCH")
+        finally:
+            snapshot.close()
+        return cls(path)
 
     def seed(self, company, resource, amount):
         with self.db:
@@ -68,14 +94,17 @@ class AuthorityHub:
             raise ValueError("SYNC_DENIED")
         return hashlib.sha256(token.encode()).hexdigest()
 
-    def issue_session(self, company, device):
+    def issue_session(self, company, device, *, can_submit=False):
         # Administrative fixture; a production issuer would authenticate the user and device.
         token = secrets.token_urlsafe(32)
         with self.db:
             self.db.execute("BEGIN IMMEDIATE")
             self.db.execute("INSERT OR IGNORE INTO devices VALUES (?, ?, 1)", (company, device))
             self._require_active_device(company, device)
-            self.db.execute("INSERT INTO sessions VALUES (?, ?, ?)", (self._digest(token), company, device))
+            digest = self._digest(token)
+            self.db.execute("INSERT INTO sessions VALUES (?, ?, ?)", (digest, company, device))
+            if can_submit:
+                self.db.execute("INSERT INTO session_writers VALUES (?)", (digest,))
         return token
 
     def revoke_session(self, token):
@@ -101,9 +130,12 @@ class AuthorityHub:
         if disabled:
             raise ValueError("SYNC_DENIED")
 
-    def _scope(self, token):
+    def _scope(self, token, *, write=False):
+        digest = self._digest(token)
         scope = self.db.execute(
-            "SELECT company, device FROM sessions WHERE digest=?", (self._digest(token),)
+            "SELECT company, device FROM sessions WHERE digest=? "
+            "AND (?=0 OR EXISTS(SELECT 1 FROM session_writers WHERE digest=?))",
+            (digest, write, digest),
         ).fetchone()
         if scope is None:
             raise ValueError("SYNC_DENIED")
@@ -146,7 +178,7 @@ class AuthorityHub:
         body = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         with self.db:
             self.db.execute("BEGIN IMMEDIATE")
-            company, device = self._scope(token)
+            company, device = self._scope(token, write=True)
             grant = self.db.execute(
                 "SELECT 1 FROM grants WHERE company=? AND device=? AND resource=?",
                 (company, device, resource),
