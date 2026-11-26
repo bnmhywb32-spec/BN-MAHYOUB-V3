@@ -5,6 +5,8 @@ import unittest
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import closing
 from pathlib import Path
+from threading import Event
+from unittest.mock import patch
 
 from proofs.sync.authority_hub import AuthorityHub
 from proofs.sync.local_queue import Queue
@@ -357,6 +359,44 @@ class TransportProof(unittest.TestCase):
                 authorization={"A": checkpoint["authorization"]},
                 history={"A": checkpoint["history"]},
             )
+
+    def test_concurrent_checkpoint_is_one_database_snapshot(self):
+        self.hub.db.execute("PRAGMA journal_mode=WAL")
+        self.hub.seed("A", "stock", 2)
+        self.hub.allocate("A", "seller", "stock", 2)
+        token = self.hub.issue_session("A", "seller", can_submit=True)
+        sale = {"kind": "sale", "resource": "stock", "amount": 1}
+        first = self.hub.submit(token, "first", sale)
+        expected = self.hub.recovery_checkpoint("A")
+        self.assertEqual(expected["receipt"], first)
+        reader_reached = Event()
+        release_reader = Event()
+        original = AuthorityHub._authorization_digest
+
+        def pause_between_queries(db, company):
+            reader_reached.set()
+            if not release_reader.wait(5):
+                raise TimeoutError("Checkpoint reader was not released")
+            return original(db, company)
+
+        def capture():
+            reader = AuthorityHub(self.path / "hub.db")
+            try:
+                return reader.recovery_checkpoint("A")
+            finally:
+                reader.db.close()
+
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            with patch.object(AuthorityHub, "_authorization_digest", side_effect=pause_between_queries):
+                pending = pool.submit(capture)
+                try:
+                    self.assertTrue(reader_reached.wait(5))
+                    second = self.hub.submit(token, "second", sale)
+                finally:
+                    release_reader.set()
+                concurrent = pending.result(timeout=5)
+        self.assertEqual(concurrent, expected)
+        self.assertEqual(self.hub.recovery_checkpoint("A")["receipt"], second)
 
 
 if __name__ == "__main__":
