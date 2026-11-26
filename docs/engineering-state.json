@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "617cb59c2306f8c04cfc1d3b511ed654eefb4220",
-  "code_sha": "617cb59c2306f8c04cfc1d3b511ed654eefb4220",
+  "last_content_commit": "d180193b8e43a47f7377c0c77ecd34909bd23a6d",
+  "code_sha": "d180193b8e43a47f7377c0c77ecd34909bd23a6d",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -64,9 +64,9 @@
     {
       "name": "python_local_transport_authority_search",
       "status": "pass",
-      "commit": "22b6aa367ccb50ec871752e5d68e472851d45e5b",
+      "commit": "d180193b8e43a47f7377c0c77ecd34909bd23a6d",
       "command": "python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.test_http_transport proofs.sync.offline_authority proofs.search.local_search",
-      "result": "7 passed including loopback HTTP authentication, scope, replay and revocation; sample settlement 1.250 ms; backup + integrity + replay 1.926 ms; search p95 8.297 ms"
+      "result": "9 tests passed; device-wide revocation holds offline reservations; 100 disk-backed sales p95 1.471 ms; backup + integrity + replay sample 2.044 ms; search p95 6.377 ms"
     },
     {
       "name": "kotlin_windows_runtime",
@@ -100,7 +100,15 @@
       "status": "unverified",
       "commit": "617cb59c2306f8c04cfc1d3b511ed654eefb4220",
       "previous_run_id": 45818355923,
-      "restriction": "Kotlin attempt failed with inconsistent Java/Kotlin JVM targets. Aligned targets and added process-relaunch scripts for both candidates."
+      "restriction": "Kotlin attempt failed with inconsistent Java/Kotlin JVM targets. Aligned targets and added process-relaunch scripts for both candidates.",
+      "run_id": 45819160646
+    },
+    {
+      "name": "flutter_android_database_reopen",
+      "status": "pass",
+      "run_id": 45818355923,
+      "job_id": 139903831699,
+      "restriction": "Emulator established in-process database reopen and exact amounts; separate process run tracked under android_runtime."
     }
   ],
   "blockers": [
@@ -108,25 +116,11 @@
     "Exercise remote authenticated transport, identity enrollment, offline reservation release and stale-backup protection; loopback HTTP scope and replay verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Follow the Android and web CI results. Validate device-level revocation and safe handling of reserved stock.",
+  "next_step": "Confirm both Android process relaunch jobs and Flutter Windows process relaunch; keep offline reservations fenced until reconciliation.",
   "changed_files": [
-    ".github/workflows/proof-runtime.yml",
-    "proofs/platform-runtime/.gitignore",
-    "proofs/platform-runtime/JvmMain.kt",
-    "proofs/platform-runtime/NativeDriver.kt",
-    "proofs/platform-runtime/Runtime.kt",
-    "proofs/platform-runtime/android/build.gradle.kts",
-    "proofs/platform-runtime/android/src/androidTest/kotlin/proof/runtime/RuntimeTest.kt",
-    "proofs/platform-runtime/contract.md",
-    "proofs/platform-runtime/flutter_android.sh",
-    "proofs/platform-runtime/kotlin_android.sh",
-    "proofs/platform-runtime/web/build.gradle.kts",
-    "proofs/platform-runtime/web/kotlin-js-store/yarn.lock",
-    "proofs/platform-runtime/web/settings.gradle.kts",
-    "proofs/platform-runtime/web/src/main/kotlin/WebMain.kt",
-    "proofs/platform-runtime/web/src/main/resources/index.html",
-    "proofs/platform-runtime/web/webpack.config.d/sqlite-browser.js",
-    "proofs/platform-runtime/web_reload.py"
+    "proofs/README.md",
+    "proofs/sync/authority_hub.py",
+    "proofs/sync/test_transport.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
