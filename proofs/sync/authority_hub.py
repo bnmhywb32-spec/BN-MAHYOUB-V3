@@ -20,6 +20,10 @@ class AuthorityHub:
                 remaining INTEGER NOT NULL CHECK(remaining >= 0),
                 PRIMARY KEY(company, device, resource)
             );
+            CREATE TABLE IF NOT EXISTS devices(
+                company TEXT, device TEXT, enabled INTEGER NOT NULL CHECK(enabled IN (0, 1)),
+                PRIMARY KEY(company, device)
+            );
             CREATE TABLE IF NOT EXISTS sessions(
                 digest TEXT PRIMARY KEY, company TEXT NOT NULL, device TEXT NOT NULL
             );
@@ -44,6 +48,7 @@ class AuthorityHub:
         self._positive(amount)
         with self.db:
             self.db.execute("BEGIN IMMEDIATE")
+            self._require_active_device(company, device)
             updated = self.db.execute(
                 "UPDATE balances SET free=free-? WHERE company=? AND resource=? AND free>=?",
                 (amount, company, resource, amount),
@@ -67,12 +72,34 @@ class AuthorityHub:
         # Administrative fixture; a production issuer would authenticate the user and device.
         token = secrets.token_urlsafe(32)
         with self.db:
+            self.db.execute("BEGIN IMMEDIATE")
+            self.db.execute("INSERT OR IGNORE INTO devices VALUES (?, ?, 1)", (company, device))
+            self._require_active_device(company, device)
             self.db.execute("INSERT INTO sessions VALUES (?, ?, ?)", (self._digest(token), company, device))
         return token
 
     def revoke_session(self, token):
         with self.db:
             self.db.execute("DELETE FROM sessions WHERE digest=?", (self._digest(token),))
+
+    def revoke_device(self, company, device):
+        with self.db:
+            self.db.execute("BEGIN IMMEDIATE")
+            self.db.execute(
+                "INSERT INTO devices VALUES (?, ?, 0) "
+                "ON CONFLICT(company, device) DO UPDATE SET enabled=0",
+                (company, device),
+            )
+            self.db.execute("DELETE FROM sessions WHERE company=? AND device=?", (company, device))
+            # Offline reservations stay encumbered until a separately proven reconciliation.
+
+    def _require_active_device(self, company, device):
+        disabled = self.db.execute(
+            "SELECT 1 FROM devices WHERE company=? AND device=? AND enabled=0",
+            (company, device),
+        ).fetchone()
+        if disabled:
+            raise ValueError("SYNC_DENIED")
 
     def _scope(self, token):
         scope = self.db.execute(

@@ -147,6 +147,41 @@ class TransportProof(unittest.TestCase):
             restored.pull(revoked)
         print(f"single local settlement={settlement_ms:.3f} ms; backup + integrity + replay={restore_ms:.3f} ms")
 
+    def test_device_revocation_keeps_its_offline_reservation_encumbered(self):
+        self.hub.seed("A", "stock", 2)
+        self.hub.allocate("A", "offline", "stock", 2)
+        tokens = [self.hub.issue_session("A", "offline") for _ in range(2)]
+        other_company = self.hub.issue_session("B", "offline")
+        self.hub.revoke_device("A", "offline")
+        for token in tokens:
+            with self.assertRaisesRegex(ValueError, "^SYNC_DENIED$"):
+                self.hub.pull(token)
+        with self.assertRaisesRegex(ValueError, "^SYNC_DENIED$"):
+            self.hub.issue_session("A", "offline")
+        with self.assertRaisesRegex(ValueError, "^AUTHORITY_LIMIT$"):
+            self.hub.allocate("A", "replacement", "stock", 1)
+        self.assertEqual(self.hub.pull(other_company), [])
+        self.assertEqual(self.hub.db.execute("SELECT remaining FROM grants").fetchone(), (2,))
+
+    def test_hundred_disk_backed_sale_settlements(self):
+        count = 100
+        self.hub.seed("A", "stock", count)
+        self.hub.allocate("A", "seller", "stock", count)
+        token = self.hub.issue_session("A", "seller")
+        sale = {"kind": "sale", "resource": "stock", "amount": 1}
+        times = []
+        for index in range(count):
+            start = time.perf_counter()
+            receipt = self.hub.submit(token, str(index), sale)
+            times.append((time.perf_counter() - start) * 1000)
+            self.assertEqual(receipt["revision"], index + 1)
+        self.assertEqual(len(self.hub.pull(token)), count)
+        self.assertEqual(self.hub.db.execute("SELECT COUNT(*), SUM(amount) FROM journal").fetchone(), (400, 0))
+        self.assertEqual(self.hub.db.execute("SELECT remaining FROM grants").fetchone(), (0,))
+        p95 = sorted(times)[94]
+        print(f"disk-backed SQLite settlement p95={p95:.3f} ms (100 isolated sales)")
+        self.assertLess(p95, 1000)
+
 
 if __name__ == "__main__":
     unittest.main()
