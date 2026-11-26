@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "a4299ed04346892c03c4e31bb8d02ee508d7f2bd",
-  "code_sha": "a4299ed04346892c03c4e31bb8d02ee508d7f2bd",
+  "last_content_commit": "0776fbad467a53c0a3bfd5daf6b939f2a88fe87b",
+  "code_sha": "0776fbad467a53c0a3bfd5daf6b939f2a88fe87b",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -64,9 +64,9 @@
     {
       "name": "python_local_transport_authority_search",
       "status": "pass",
-      "commit": "a4299ed04346892c03c4e31bb8d02ee508d7f2bd",
+      "commit": "0776fbad467a53c0a3bfd5daf6b939f2a88fe87b",
       "command": "python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.test_http_transport proofs.sync.offline_authority proofs.search.local_search",
-      "result": "10 passed; atomic offline stock/journal/outbox rollback, restart and concurrent HTTP replay verified; hub settlement p95 1.336 ms (100 sales); verified backup replay sample 2.335 ms; search p95 6.837 ms"
+      "result": "11 tests passed; wrong-company receipts rejected before cursor or queue changes, existing transport ID cannot produce a second local sale. 100 SQLite settlements p95 2.186 ms; verified backup replay sample 2.056 ms; search p95 7.488 ms."
     },
     {
       "name": "kotlin_windows_runtime",
@@ -147,12 +147,9 @@
   ],
   "next_step": "Inspect Flutter Android process restart evidence, then review measured candidate limitations and establish the approved V2 task baseline.",
   "changed_files": [
-    "docs/rebuild/FIRST-RELEASE.md",
-    "proofs/README.md",
     "proofs/sync/authority_hub.py",
     "proofs/sync/local_queue.py",
     "proofs/sync/offline_sale.py",
-    "proofs/sync/sale.py",
     "proofs/sync/test_http_transport.py",
     "proofs/sync/test_transport.py"
   ],
