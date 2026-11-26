@@ -1,5 +1,6 @@
 """Loopback-only transport fixture for exercising real HTTP request boundaries."""
 
+import hashlib
 import json
 import ssl
 import subprocess
@@ -12,11 +13,13 @@ from threading import Thread
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
+from proofs.search.local_search import Search
+from proofs.search.scoped_search import find_authorized
 from proofs.sync.authority_hub import AuthorityHub
 from proofs.sync.offline_sale import OfflineSale
 
 
-def endpoint(database):
+def endpoint(database, *, require_client_certificate=False):
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):
             pass
@@ -24,6 +27,12 @@ def endpoint(database):
         def do_POST(self):
             self.connection.settimeout(5)
             try:
+                fingerprint = None
+                if require_client_certificate:
+                    certificate = self.connection.getpeercert(binary_form=True)
+                    if not certificate:
+                        raise ValueError("SYNC_DENIED")
+                    fingerprint = hashlib.sha256(certificate).hexdigest()
                 scheme, _, token = self.headers.get("Authorization", "").partition(" ")
                 if scheme != "Bearer":
                     raise ValueError("SYNC_DENIED")
@@ -36,16 +45,21 @@ def endpoint(database):
                 hub = AuthorityHub(database)
                 try:
                     if self.path == "/submit" and set(body) == {"operation_id", "payload"}:
-                        response = hub.submit(token, body["operation_id"], body["payload"])
+                        response = hub.submit(token, body["operation_id"], body["payload"], peer_fingerprint=fingerprint)
                     elif self.path == "/pull" and set(body) == {"after"}:
-                        response = hub.pull(token, body["after"])
+                        response = hub.pull(token, body["after"], peer_fingerprint=fingerprint)
+                    elif self.path == "/search" and set(body) == {"branch", "query"}:
+                        response = find_authorized(
+                            hub, Search(hub.db), token, body["branch"], body["query"],
+                            peer_fingerprint=fingerprint,
+                        )
                     else:
                         raise ValueError("INVALID_REQUEST")
                 finally:
                     hub.db.close()
             except (TypeError, ValueError) as error:
                 code = str(error)
-                status = {"SYNC_DENIED": 403, "SYNC_CONFLICT": 409, "AUTHORITY_LIMIT": 409}.get(code, 400)
+                status = {"SYNC_DENIED": 403, "SEARCH_DENIED": 403, "SYNC_CONFLICT": 409, "AUTHORITY_LIMIT": 409}.get(code, 400)
                 self.reply(status, {"code": code if status != 400 else "INVALID_REQUEST"})
             else:
                 self.reply(200, response)
@@ -197,6 +211,103 @@ class HttpTransportProof(unittest.TestCase):
                 self.assertEqual(hub.db.execute("SELECT COUNT(*), SUM(amount) FROM journal").fetchone(), (4, 0))
                 hub.revoke_device("A", "seller")
                 self.assertEqual(post("localhost", trusted, token), (403, {"code": "SYNC_DENIED"}))
+            finally:
+                server.shutdown()
+                worker.join()
+
+    def test_mutual_tls_binds_session_to_enrolled_device(self):
+        temp = self.enterContext(tempfile.TemporaryDirectory())
+        path = Path(temp)
+
+        def run(*args):
+            subprocess.run(["openssl", *args], check=True,
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+        ca_cert, ca_key = path / "ca.crt", path / "ca.key"
+        run("req", "-x509", "-newkey", "rsa:2048", "-noenc", "-days", "1",
+            "-subj", "/CN=V3 proof CA", "-keyout", str(ca_key), "-out", str(ca_cert))
+
+        def certificate(name, extensions):
+            key, request, cert = path / (name + ".key"), path / (name + ".csr"), path / (name + ".crt")
+            ext = path / (name + ".ext")
+            ext.write_text(extensions)
+            run("req", "-newkey", "rsa:2048", "-noenc", "-subj", "/CN=" + name,
+                "-keyout", str(key), "-out", str(request))
+            run("x509", "-req", "-in", str(request), "-CA", str(ca_cert), "-CAkey", str(ca_key),
+                "-CAcreateserial", "-days", "1", "-extfile", str(ext), "-out", str(cert))
+            fingerprint = hashlib.sha256(ssl.PEM_cert_to_DER_cert(cert.read_text())).hexdigest()
+            return cert, key, fingerprint
+
+        server_cert, server_key, _ = certificate(
+            "localhost", "subjectAltName=DNS:localhost\nextendedKeyUsage=serverAuth\n"
+        )
+        cert_a, key_a, fingerprint_a = certificate("device-a", "extendedKeyUsage=clientAuth\n")
+        cert_b, key_b, fingerprint_b = certificate("device-b", "extendedKeyUsage=clientAuth\n")
+        hub = AuthorityHub(path / "authority.db")
+        self.addCleanup(hub.db.close)
+        hub.seed("A", "stock", 1)
+        hub.allocate("A", "seller", "stock", 1)
+        hub.enroll_device_certificate("A", "seller", fingerprint_a)
+        hub.enroll_device_certificate("A", "other", fingerprint_b)
+        hub.grant_search_branch("A", "seller", "1")
+        Search(hub.db).put("A", "1", "visible", "001", "بوجي", "النجم")
+        token = hub.issue_session("A", "seller", can_submit=True, peer_fingerprint=fingerprint_a)
+        unbound = hub.issue_session("A", "seller", can_submit=True)
+        queue = OfflineSale(path / "device.db", "A", 1)
+        self.addCleanup(queue.close)
+        sale = {"operation_id": "sale", "payload": queue.sell("sale", 1)}
+
+        with ThreadingHTTPServer(("127.0.0.1", 0), endpoint(path / "authority.db", require_client_certificate=True)) as server:
+            tls = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+            tls.minimum_version = ssl.TLSVersion.TLSv1_2
+            tls.load_cert_chain(server_cert, server_key)
+            tls.load_verify_locations(cafile=str(ca_cert))
+            tls.verify_mode = ssl.CERT_REQUIRED
+            server.socket = tls.wrap_socket(server.socket, server_side=True)
+            worker = Thread(target=server.serve_forever)
+            worker.start()
+            try:
+                def context(cert=None, key=None):
+                    result = ssl.create_default_context(cafile=str(ca_cert))
+                    if cert is not None:
+                        result.load_cert_chain(cert, key)
+                    return result
+
+                def post(route, body, client, credential=token):
+                    request = Request(
+                        f"https://localhost:{server.server_port}{route}",
+                        json.dumps(body).encode(),
+                        {"Authorization": f"Bearer {credential}", "Content-Type": "application/json"},
+                    )
+                    try:
+                        with urlopen(request, timeout=5, context=client) as response:
+                            return response.status, json.load(response)
+                    except HTTPError as error:
+                        with error:
+                            return error.code, json.load(error)
+
+                with self.assertRaises((URLError, ssl.SSLError)):
+                    post("/submit", sale, context())
+                self.assertEqual(post("/submit", sale, context(cert_b, key_b)), (403, {"code": "SYNC_DENIED"}))
+                self.assertEqual(post("/submit", sale, context(cert_a, key_a), unbound), (403, {"code": "SYNC_DENIED"}))
+                self.assertEqual(hub.db.execute("SELECT COUNT(*) FROM operations").fetchone(), (0,))
+                self.assertEqual(
+                    post("/search", {"branch": "1", "query": "٠٠١"}, context(cert_a, key_a)),
+                    (200, [["visible", "بوجي", "النجم"]]),
+                )
+                self.assertEqual(
+                    post("/search", {"branch": "2", "query": "٠٠١"}, context(cert_a, key_a)),
+                    (403, {"code": "SEARCH_DENIED"}),
+                )
+                status, first = post("/submit", sale, context(cert_a, key_a))
+                self.assertEqual(status, 200)
+                self.assertEqual(post("/submit", sale, context(cert_a, key_a)), (200, first))
+                queue.acknowledge("sale", first)
+                self.assertEqual(hub.db.execute("SELECT COUNT(*), SUM(amount) FROM journal").fetchone(), (4, 0))
+                hub.revoke_device_certificate("A", "seller", fingerprint_a)
+                self.assertEqual(post("/submit", sale, context(cert_a, key_a)), (403, {"code": "SYNC_DENIED"}))
+                hub.enroll_device_certificate("A", "seller", fingerprint_a)
+                self.assertEqual(post("/submit", sale, context(cert_a, key_a)), (403, {"code": "SYNC_DENIED"}))
             finally:
                 server.shutdown()
                 worker.join()

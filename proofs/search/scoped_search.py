@@ -1,7 +1,7 @@
 """Authorized search fixture sharing one SQLite transaction with the session store."""
 
 
-def find_authorized(hub, search, token, branch, query, limit=20):
+def find_authorized(hub, search, token, branch, query, limit=20, *, peer_fingerprint=None):
     if hub.db is not search.db:
         raise ValueError("SEARCH_DATABASE_MISMATCH")
     if not isinstance(branch, str) or not branch:
@@ -9,7 +9,7 @@ def find_authorized(hub, search, token, branch, query, limit=20):
     db = hub.db
     db.execute("SAVEPOINT authorized_search")
     try:
-        company, device = hub._scope(token)
+        company, device = hub._scope(token, peer_fingerprint=peer_fingerprint)
         allowed = db.execute(
             "SELECT 1 FROM search_scopes WHERE company=? AND device=? AND branch=?",
             (company, device, branch),

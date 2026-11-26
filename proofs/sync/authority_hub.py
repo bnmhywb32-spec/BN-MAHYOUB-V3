@@ -34,11 +34,19 @@ class AuthorityHub:
                 company TEXT NOT NULL, device TEXT NOT NULL, branch TEXT NOT NULL,
                 PRIMARY KEY(company, device, branch)
             );
+            CREATE TABLE IF NOT EXISTS device_certificates(
+                company TEXT NOT NULL, device TEXT NOT NULL, fingerprint TEXT NOT NULL,
+                PRIMARY KEY(company, device, fingerprint), UNIQUE(company, fingerprint)
+            );
             CREATE TABLE IF NOT EXISTS sessions(
                 digest TEXT PRIMARY KEY, company TEXT NOT NULL, device TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS session_writers(
                 digest TEXT PRIMARY KEY REFERENCES sessions(digest) ON DELETE CASCADE
+            );
+            CREATE TABLE IF NOT EXISTS session_certificates(
+                digest TEXT PRIMARY KEY REFERENCES sessions(digest) ON DELETE CASCADE,
+                fingerprint TEXT NOT NULL
             );
             CREATE TABLE IF NOT EXISTS operations(
                 company TEXT, id TEXT, device TEXT NOT NULL, revision INTEGER NOT NULL,
@@ -74,6 +82,12 @@ class AuthorityHub:
                 "SELECT 1 FROM sqlite_master WHERE type='table' AND name='search_scopes'"
             ).fetchone():
                 companies.update(row[0] for row in snapshot.execute("SELECT DISTINCT company FROM search_scopes"))
+            if snapshot.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' AND name='device_certificates'"
+            ).fetchone():
+                companies.update(row[0] for row in snapshot.execute(
+                    "SELECT DISTINCT company FROM device_certificates"
+                ))
             posting_companies = {row[0] for row in snapshot.execute(
                 "SELECT DISTINCT company FROM operations"
             )}
@@ -104,6 +118,16 @@ class AuthorityHub:
                 "CREATE TABLE IF NOT EXISTS search_scopes("
                 "company TEXT NOT NULL, device TEXT NOT NULL, branch TEXT NOT NULL, "
                 "PRIMARY KEY(company, device, branch))"
+            )
+            snapshot.execute(
+                "CREATE TABLE IF NOT EXISTS device_certificates("
+                "company TEXT NOT NULL, device TEXT NOT NULL, fingerprint TEXT NOT NULL, "
+                "PRIMARY KEY(company, device, fingerprint), UNIQUE(company, fingerprint))"
+            )
+            snapshot.execute(
+                "CREATE TABLE IF NOT EXISTS session_certificates("
+                "digest TEXT PRIMARY KEY REFERENCES sessions(digest) ON DELETE CASCADE, "
+                "fingerprint TEXT NOT NULL)"
             )
             snapshot.commit()
         except BaseException:
@@ -157,6 +181,22 @@ class AuthorityHub:
             ).fetchall()
             if scopes:
                 records.append(scopes)
+        has_certificates = db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='device_certificates'"
+        ).fetchone()
+        has_bindings = db.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='session_certificates'"
+        ).fetchone()
+        certificates = db.execute(
+            "SELECT device, fingerprint FROM device_certificates WHERE company=? "
+            "ORDER BY device, fingerprint", (company,)
+        ).fetchall() if has_certificates else []
+        bindings = db.execute(
+            "SELECT s.digest, c.fingerprint FROM sessions AS s JOIN session_certificates AS c "
+            "ON c.digest=s.digest WHERE s.company=? ORDER BY s.digest", (company,)
+        ).fetchall() if has_bindings else []
+        if certificates or bindings:
+            records.append(["device-certificate-v1", certificates, bindings])
         data = json.dumps(records, separators=(",", ":")).encode()
         return hashlib.sha256(data).hexdigest()
 
@@ -201,7 +241,8 @@ class AuthorityHub:
                 companies = [row[0] for row in self.db.execute(
                     "SELECT company FROM devices UNION SELECT company FROM sessions UNION "
                     "SELECT company FROM balances UNION SELECT company FROM grants UNION "
-                    "SELECT company FROM operations UNION SELECT company FROM search_scopes"
+                    "SELECT company FROM operations UNION SELECT company FROM search_scopes UNION "
+                    "SELECT company FROM device_certificates"
                 )]
                 if not companies:
                     raise ValueError("RECOVERY_CHECKPOINT_REQUIRED")
@@ -253,18 +294,61 @@ class AuthorityHub:
             raise ValueError("SYNC_DENIED")
         return hashlib.sha256(token.encode()).hexdigest()
 
-    def issue_session(self, company, device, *, can_submit=False):
+    def issue_session(self, company, device, *, can_submit=False, peer_fingerprint=None):
         # Administrative fixture; a production issuer would authenticate the user and device.
         token = secrets.token_urlsafe(32)
         with self.db:
             self.db.execute("BEGIN IMMEDIATE")
             self.db.execute("INSERT OR IGNORE INTO devices VALUES (?, ?, 1)", (company, device))
             self._require_active_device(company, device)
+            if peer_fingerprint is not None:
+                self._require_device_certificate(company, device, peer_fingerprint)
             digest = self._digest(token)
             self.db.execute("INSERT INTO sessions VALUES (?, ?, ?)", (digest, company, device))
+            if peer_fingerprint is not None:
+                self.db.execute("INSERT INTO session_certificates VALUES (?, ?)", (digest, peer_fingerprint))
             if can_submit:
                 self.db.execute("INSERT INTO session_writers VALUES (?)", (digest,))
         return token
+
+    @staticmethod
+    def _validate_fingerprint(fingerprint):
+        if not isinstance(fingerprint, str) or len(fingerprint) != 64 or any(
+            character not in "0123456789abcdef" for character in fingerprint
+        ):
+            raise ValueError("SYNC_DENIED")
+
+    def _require_device_certificate(self, company, device, fingerprint):
+        self._validate_fingerprint(fingerprint)
+        if self.db.execute(
+            "SELECT 1 FROM device_certificates WHERE company=? AND device=? AND fingerprint=?",
+            (company, device, fingerprint),
+        ).fetchone() is None:
+            raise ValueError("SYNC_DENIED")
+
+    def enroll_device_certificate(self, company, device, fingerprint):
+        # Administrative fixture; actual enrollment and certificate ownership are external.
+        self._validate_fingerprint(fingerprint)
+        with self.db:
+            self.db.execute("BEGIN IMMEDIATE")
+            self.db.execute("INSERT OR IGNORE INTO devices VALUES (?, ?, 1)", (company, device))
+            self._require_active_device(company, device)
+            self.db.execute(
+                "INSERT INTO device_certificates VALUES (?, ?, ?)", (company, device, fingerprint)
+            )
+
+    def revoke_device_certificate(self, company, device, fingerprint):
+        with self.db:
+            self.db.execute("BEGIN IMMEDIATE")
+            self.db.execute(
+                "DELETE FROM sessions WHERE company=? AND device=? AND digest IN "
+                "(SELECT digest FROM session_certificates WHERE fingerprint=?)",
+                (company, device, fingerprint),
+            )
+            self.db.execute(
+                "DELETE FROM device_certificates WHERE company=? AND device=? AND fingerprint=?",
+                (company, device, fingerprint),
+            )
 
     def revoke_session(self, token):
         with self.db:
@@ -306,7 +390,7 @@ class AuthorityHub:
         if disabled:
             raise ValueError("SYNC_DENIED")
 
-    def _scope(self, token, *, write=False):
+    def _scope(self, token, *, write=False, peer_fingerprint=None):
         digest = self._digest(token)
         scope = self.db.execute(
             "SELECT company, device FROM sessions WHERE digest=? "
@@ -315,14 +399,23 @@ class AuthorityHub:
         ).fetchone()
         if scope is None:
             raise ValueError("SYNC_DENIED")
+        bound = self.db.execute(
+            "SELECT fingerprint FROM session_certificates WHERE digest=?", (digest,)
+        ).fetchone()
+        if bound is not None:
+            if peer_fingerprint != bound[0]:
+                raise ValueError("SYNC_DENIED")
+            self._require_device_certificate(*scope, peer_fingerprint)
+        elif peer_fingerprint is not None:
+            raise ValueError("SYNC_DENIED")
         return scope
 
-    def pull(self, token, after=0):
+    def pull(self, token, after=0, *, peer_fingerprint=None):
         if type(after) is not int or not 0 <= after <= 2**63 - 1:
             raise ValueError("INVALID_REVISION")
         with self.db:
             self.db.execute("BEGIN")
-            company, _ = self._scope(token)
+            company, _ = self._scope(token, peer_fingerprint=peer_fingerprint)
             rows = self.db.execute(
                 "SELECT id, payload, revision, received_at FROM operations "
                 "WHERE company=? AND revision>? ORDER BY revision LIMIT 100",
@@ -335,7 +428,7 @@ class AuthorityHub:
         return dict(company=company, operation_id=operation_id, payload=json.loads(body),
                     revision=revision, received_at=received_at)
 
-    def submit(self, token, operation_id, payload):
+    def submit(self, token, operation_id, payload, *, peer_fingerprint=None):
         if not isinstance(operation_id, str) or not 0 < len(operation_id) <= 128:
             raise ValueError("INVALID_OPERATION")
         if not isinstance(payload, dict) or set(payload) not in (
@@ -354,7 +447,7 @@ class AuthorityHub:
         body = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         with self.db:
             self.db.execute("BEGIN IMMEDIATE")
-            company, device = self._scope(token, write=True)
+            company, device = self._scope(token, write=True, peer_fingerprint=peer_fingerprint)
             grant = self.db.execute(
                 "SELECT 1 FROM grants WHERE company=? AND device=? AND resource=?",
                 (company, device, resource),

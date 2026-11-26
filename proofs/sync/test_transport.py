@@ -501,6 +501,8 @@ class TransportProof(unittest.TestCase):
         with closing(sqlite3.connect(path)) as snapshot:
             self.hub.db.backup(snapshot)
             snapshot.execute("DROP TABLE search_scopes")
+            snapshot.execute("DROP TABLE session_certificates")
+            snapshot.execute("DROP TABLE device_certificates")
             snapshot.commit()
         restored = AuthorityHub.open_verified_backup(
             path, {}, authorization={"A": checkpoint["authorization"]},
@@ -508,6 +510,8 @@ class TransportProof(unittest.TestCase):
         )
         with closing(restored.db):
             self.assertEqual(restored.db.execute("SELECT COUNT(*) FROM search_scopes").fetchone(), (0,))
+            self.assertEqual(restored.db.execute("SELECT COUNT(*) FROM device_certificates").fetchone(), (0,))
+            self.assertEqual(restored.db.execute("SELECT COUNT(*) FROM session_certificates").fetchone(), (0,))
             self.assertEqual(restored.recovery_checkpoint("A"), checkpoint)
 
     def test_restore_requires_checkpoints_for_companies_with_only_search_scopes(self):
@@ -591,6 +595,65 @@ class TransportProof(unittest.TestCase):
         self.assertFalse(self.hub.db.in_transaction)
         self.assertEqual(list(self.path.glob(".v3-proof-backup-*")), [])
         self.assertIsNone(self.hub.recovery_checkpoint("A")["receipt"])
+
+    def test_restore_does_not_reactivate_revoked_device_certificate(self):
+        fingerprint = "a" * 64
+        self.hub.enroll_device_certificate("A", "seller", fingerprint)
+        token = self.hub.issue_session("A", "seller", peer_fingerprint=fingerprint)
+        path = self.path / "old-cert.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+        self.hub.revoke_device_certificate("A", "seller", fingerprint)
+        checkpoint = self.hub.recovery_checkpoint("A")
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_AUTHORIZATION_MISMATCH$"):
+            AuthorityHub.open_verified_backup(
+                path, {}, authorization={"A": checkpoint["authorization"]},
+                history={"A": checkpoint["history"]},
+            )
+        with self.assertRaisesRegex(ValueError, "^SYNC_DENIED$"):
+            self.hub.pull(token, peer_fingerprint=fingerprint)
+
+    def test_certificate_revocation_serializes_with_sale(self):
+        self.hub.seed("A", "stock", 1)
+        self.hub.allocate("A", "seller", "stock", 1)
+        fingerprint = "a" * 64
+        self.hub.enroll_device_certificate("A", "seller", fingerprint)
+        token = self.hub.issue_session("A", "seller", can_submit=True, peer_fingerprint=fingerprint)
+        checked = Event()
+        proceed = Event()
+        original = AuthorityHub._require_device_certificate
+
+        def pause_after_certificate_check(hub, company, device, peer):
+            original(hub, company, device, peer)
+            checked.set()
+            if not proceed.wait(5):
+                raise TimeoutError("Sale was not released")
+
+        sale = {"kind": "sale", "resource": "stock", "amount": 1}
+
+        def submit():
+            sender = AuthorityHub(self.path / "hub.db")
+            try:
+                return sender.submit(token, "sale", sale, peer_fingerprint=fingerprint)
+            finally:
+                sender.db.close()
+
+        self.hub.db.execute("PRAGMA busy_timeout=0")
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            with patch.object(AuthorityHub, "_require_device_certificate", pause_after_certificate_check):
+                pending = pool.submit(submit)
+                try:
+                    self.assertTrue(checked.wait(5))
+                    with self.assertRaisesRegex(sqlite3.OperationalError, "locked"):
+                        self.hub.revoke_device_certificate("A", "seller", fingerprint)
+                finally:
+                    proceed.set()
+                receipt = pending.result(timeout=5)
+        self.assertEqual(receipt["revision"], 1)
+        self.hub.revoke_device_certificate("A", "seller", fingerprint)
+        with self.assertRaisesRegex(ValueError, "^SYNC_DENIED$"):
+            self.hub.submit(token, "sale", sale, peer_fingerprint=fingerprint)
+        self.assertEqual(self.hub.db.execute("SELECT COUNT(*), SUM(amount) FROM journal").fetchone(), (4, 0))
 
 
 if __name__ == "__main__":
