@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "fce3446cdff2b3d342a16aabc4e0717e001cb650",
-  "code_sha": "fce3446cdff2b3d342a16aabc4e0717e001cb650",
+  "last_content_commit": "3396d01c539e48700106b27555a9c93a5324535c",
+  "code_sha": "3396d01c539e48700106b27555a9c93a5324535c",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -159,8 +159,8 @@
     {
       "name": "restore_authorization_checkpoint",
       "status": "pass",
-      "commit": "fce3446cdff2b3d342a16aabc4e0717e001cb650",
-      "result": "16 local Python tests passed. A pre-revocation snapshot with the correct latest receipt is rejected by a separately supplied authorization fingerprint. Production retention/authentication of checkpoints remains unverified."
+      "commit": "3396d01c539e48700106b27555a9c93a5324535c",
+      "result": "18 local Python tests passed. Recovery rejects revoked sessions, missing company checkpoints and stock allocated after the last receipt. Requires independently retained current checkpoints."
     }
   ],
   "blockers": [
