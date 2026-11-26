@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "c8ba612de9cc673b2bad12f3fbf621edd0c5b696",
-  "code_sha": "c8ba612de9cc673b2bad12f3fbf621edd0c5b696",
+  "last_content_commit": "2b48b8e507ea0ad07d69074a3eba48798b50a3e7",
+  "code_sha": "2b48b8e507ea0ad07d69074a3eba48798b50a3e7",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -47,13 +47,6 @@
       "result": "Reference and durable SQLite fixtures passed with Kotlin 2.1.20 and SQLite JDBC 3.49.1.0"
     },
     {
-      "name": "python_local_transport_authority_search",
-      "status": "pass",
-      "commit": "65a04d8b2a8d54b21235ed90f9e5f7b933053fec",
-      "command": "python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.offline_authority proofs.search.local_search",
-      "result": "5 tests passed; search p95 5.867 ms on in-memory synthetic fixture"
-    },
-    {
       "name": "cloud_http",
       "status": "blocked",
       "result": "Audit preflight reported missing isolated test configuration; no network requests"
@@ -73,22 +66,25 @@
       "status": "unverified",
       "commit": "c8ba612de9cc673b2bad12f3fbf621edd0c5b696",
       "restriction": "Flutter Android/Windows/web drivers and Kotlin Windows JVM wired. Browser full reload and Kotlin Android/web require additional evidence."
+    },
+    {
+      "name": "python_local_transport_authority_search",
+      "status": "pass",
+      "commit": "2b48b8e507ea0ad07d69074a3eba48798b50a3e7",
+      "command": "python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.offline_authority proofs.search.local_search",
+      "result": "6 passed; journal rollback, session revocation and replay from integrity-checked backup verified; sample settlement 1.637 ms and backup + integrity + replay 3.694 ms; search p95 6.644 ms"
     }
   ],
   "blockers": [
     "Run the shared platform runtime and exact-precision contract on Android, Windows and web for both candidates",
-    "Prove trusted identity, revocation, accounting effects and ordered settlement over network transport; SQLite hub evidence covers allocation and receipt only",
+    "Exercise identity enrollment and revocation, reservation recovery, ledger settlement and ordered receipts over a real network; current authenticated assertion is local.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Exercise authenticated sale settlement and backup independently while platform runtime results are pending.",
+  "next_step": "Diagnose platform CI results and extend the network and platform-runtime proofs.",
   "changed_files": [
-    ".github/workflows/proof-runtime.yml",
-    "proofs/platform-runtime/JvmMain.kt",
-    "proofs/platform-runtime/Runtime.kt",
-    "proofs/platform-runtime/contract.md",
-    "proofs/platform-runtime/flutter_main.dart",
-    "proofs/platform-runtime/integration_test/durable_test.dart",
-    "proofs/platform-runtime/test_driver/integration_test.dart"
+    "proofs/README.md",
+    "proofs/sync/authority_hub.py",
+    "proofs/sync/test_transport.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
