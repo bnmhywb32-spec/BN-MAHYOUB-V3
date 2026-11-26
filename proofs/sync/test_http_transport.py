@@ -3,6 +3,7 @@
 import json
 import tempfile
 import unittest
+from concurrent.futures import ThreadPoolExecutor
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from threading import Thread
@@ -10,7 +11,7 @@ from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 from proofs.sync.authority_hub import AuthorityHub
-from proofs.sync.local_queue import Queue
+from proofs.sync.offline_sale import OfflineSale
 
 
 def endpoint(database):
@@ -64,15 +65,17 @@ class HttpTransportProof(unittest.TestCase):
         path = Path(temp)
         hub = AuthorityHub(path / "authority.db")
         self.addCleanup(hub.db.close)
-        queue = Queue(path / "device.db", "A")
+        queue = OfflineSale(path / "device.db", "A", 2)
         self.addCleanup(queue.close)
         hub.seed("A", "stock", 2)
         hub.allocate("A", "seller", "stock", 2)
         token = hub.issue_session("A", "seller", can_submit=True)
         observer = hub.issue_session("A", "seller")
         other = hub.issue_session("B", "seller", can_submit=True)
-        payload = {"kind": "sale", "resource": "stock", "amount": 2}
-        queue.enqueue(payload, "sale")
+        payload = queue.sell("sale", 2)
+        self.assertEqual(queue.sell("sale", 2), payload)
+        self.assertEqual(queue.db.execute("SELECT remaining FROM offline_stock").fetchone(), (0,))
+        self.assertEqual(queue.db.execute("SELECT COUNT(*), SUM(amount) FROM offline_journal").fetchone(), (4, 0))
 
         with ThreadingHTTPServer(("127.0.0.1", 0), endpoint(path / "authority.db")) as server:
             worker = Thread(target=server.serve_forever)
@@ -94,17 +97,25 @@ class HttpTransportProof(unittest.TestCase):
                 command = {"operation_id": "sale", "payload": payload}
                 self.assertEqual(post("/submit", command, observer), (403, {"code": "SYNC_DENIED"}))
                 self.assertEqual(post("/submit", command, other), (403, {"code": "SYNC_DENIED"}))
-                status, first = post("/submit", command, token)
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    responses = list(pool.map(lambda _: post("/submit", command, token), range(2)))
+                status, first = responses[0]
                 self.assertEqual(status, 200)
+                self.assertEqual(responses[1], (200, first))
                 self.assertEqual(first["revision"], 1)
                 # Simulate losing acknowledgement at the client boundary.
                 self.assertEqual(len(queue.pending()), 1)
                 self.assertEqual(post("/submit", command, token), (200, first))
+                self.assertEqual(
+                    post("/submit", dict(command, operation_id="second-sale"), token),
+                    (409, {"code": "AUTHORITY_LIMIT"}),
+                )
                 queue.acknowledge("sale", first)
                 self.assertEqual(post("/pull", {"after": 0}, other), (200, []))
                 self.assertEqual(post("/pull", {"after": 0}, observer), (200, [first]))
                 queue.receive([first])
                 self.assertEqual(queue.revision(), 1)
+                self.assertEqual(queue.sell("sale", 2), payload)
                 self.assertEqual(queue.pending(), [])
                 self.assertEqual(hub.db.execute("SELECT COUNT(*), SUM(amount) FROM journal").fetchone(), (4, 0))
                 hub.revoke_session(token)

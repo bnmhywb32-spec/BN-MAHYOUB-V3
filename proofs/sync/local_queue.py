@@ -21,16 +21,19 @@ class Queue:
         body = json.dumps(payload, sort_keys=True, separators=(',',':'), allow_nan=False)
         with self.db:
             self.db.execute("BEGIN IMMEDIATE")
-            receipt = self.db.execute("SELECT payload FROM receipts WHERE company=? AND id=?",(self.company,op)).fetchone()
-            if receipt:
-                if receipt[0] != body:
-                    raise ValueError("SYNC_CONFLICT")
-                return op
-            self.db.execute("INSERT OR IGNORE INTO pending VALUES(?,?,?)",(self.company,op,body))
-            old = self.db.execute("SELECT payload FROM pending WHERE company=? AND id=?",(self.company,op)).fetchone()
-            if old[0] != body:
-                raise ValueError("SYNC_CONFLICT")
+            self._enqueue_locked(op, body)
         return op
+
+    def _enqueue_locked(self, op, body):
+        receipt = self.db.execute("SELECT payload FROM receipts WHERE company=? AND id=?",(self.company,op)).fetchone()
+        if receipt:
+            if receipt[0] != body:
+                raise ValueError("SYNC_CONFLICT")
+            return
+        self.db.execute("INSERT OR IGNORE INTO pending VALUES(?,?,?)",(self.company,op,body))
+        old = self.db.execute("SELECT payload FROM pending WHERE company=? AND id=?",(self.company,op)).fetchone()
+        if old[0] != body:
+            raise ValueError("SYNC_CONFLICT")
 
     def pending(self):
         return self.db.execute("SELECT id,payload FROM pending WHERE company=? ORDER BY rowid",(self.company,)).fetchall()

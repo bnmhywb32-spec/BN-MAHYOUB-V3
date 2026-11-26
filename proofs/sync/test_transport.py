@@ -3,10 +3,12 @@ import tempfile
 import time
 import unittest
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import closing
 from pathlib import Path
 
 from proofs.sync.authority_hub import AuthorityHub
 from proofs.sync.local_queue import Queue
+from proofs.sync.offline_sale import OfflineSale
 
 
 class TransportProof(unittest.TestCase):
@@ -191,6 +193,29 @@ class TransportProof(unittest.TestCase):
         p95 = sorted(times)[94]
         print(f"disk-backed SQLite settlement p95={p95:.3f} ms (100 isolated sales)")
         self.assertLess(p95, 1000)
+
+    def test_offline_sale_and_outbox_are_atomic_on_restart(self):
+        path = self.path / "device.db"
+        device = self.enterContext(closing(OfflineSale(path, "A", 1)))
+        device.db.execute("""
+            CREATE TEMP TRIGGER fail_delivery BEFORE INSERT ON pending
+            BEGIN SELECT RAISE(ABORT, 'injected outbox failure'); END
+        """)
+        with self.assertRaisesRegex(sqlite3.IntegrityError, "^injected outbox failure$"):
+            device.sell("sale", 1)
+        self.assertEqual(device.db.execute("SELECT remaining FROM offline_stock").fetchone(), (1,))
+        self.assertEqual(device.db.execute("SELECT COUNT(*) FROM offline_sales").fetchone(), (0,))
+        self.assertEqual(device.db.execute("SELECT COUNT(*) FROM offline_journal").fetchone(), (0,))
+        self.assertEqual(device.pending(), [])
+        device.db.execute("DROP TRIGGER fail_delivery")
+        payload = device.sell("sale", 1)
+        restarted = self.enterContext(closing(OfflineSale(path, "A", 1)))
+        self.assertEqual(restarted.sell("sale", 1), payload)
+        self.assertEqual(len(restarted.pending()), 1)
+        with self.assertRaisesRegex(ValueError, "^SYNC_CONFLICT$"):
+            restarted.sell("sale", 2)
+        with self.assertRaisesRegex(ValueError, "^AUTHORITY_LIMIT$"):
+            restarted.sell("more", 1)
 
 
 if __name__ == "__main__":

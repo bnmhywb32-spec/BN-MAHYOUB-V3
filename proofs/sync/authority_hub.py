@@ -6,6 +6,8 @@ import secrets
 import sqlite3
 from pathlib import Path
 
+from proofs.sync.sale import MAX_SALE_QUANTITY, sale_journal
+
 
 class AuthorityHub:
     def __init__(self, path):
@@ -173,7 +175,7 @@ class AuthorityHub:
         sale = "kind" in payload
         if sale and (payload["kind"] != "sale" or resource != "stock"):
             raise ValueError("INVALID_PAYLOAD")
-        if sale and amount > (2**63 - 1) // 100:
+        if sale and amount > MAX_SALE_QUANTITY:
             raise ValueError("INVALID_AMOUNT")
         body = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         with self.db:
@@ -213,9 +215,6 @@ class AuthorityHub:
                 if sale:
                     self.db.executemany(
                         "INSERT INTO journal VALUES (?, ?, ?, ?)",
-                        [(company, operation_id, account, value) for account, value in (
-                            ("cash", amount * 100), ("revenue", -amount * 100),
-                            ("cogs", amount * 60), ("inventory", -amount * 60),
-                        )],
+                        [(company, operation_id, account, value) for account, value in sale_journal(amount)],
                     )
             return self._receipt(operation_id, body, revision, received_at)
