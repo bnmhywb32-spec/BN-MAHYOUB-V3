@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "22b6aa367ccb50ec871752e5d68e472851d45e5b",
-  "code_sha": "22b6aa367ccb50ec871752e5d68e472851d45e5b",
+  "last_content_commit": "617cb59c2306f8c04cfc1d3b511ed654eefb4220",
+  "code_sha": "617cb59c2306f8c04cfc1d3b511ed654eefb4220",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -62,13 +62,6 @@
       "result": "Kotlin 2.1.20, AndroidX BundledSQLiteDriver 2.5.0 on Linux; two JVM processes verified sale, rollback, exact amounts and precision above 2^53"
     },
     {
-      "name": "platform_runtime_matrix",
-      "status": "unverified",
-      "commit": "13bdfd8aff2ae9d7a01ea2ca26cc2b5ac7160803",
-      "restriction": "Run 45817878254 failed at Flutter analysis and Kotlin Windows classpath. Fixed those runner failures, added Chromium reload and Android Kotlin tests; corrected matrix unverified.",
-      "previous_run_id": 45817878254
-    },
-    {
       "name": "python_local_transport_authority_search",
       "status": "pass",
       "commit": "22b6aa367ccb50ec871752e5d68e472851d45e5b",
@@ -81,18 +74,59 @@
       "run_id": 45818355923,
       "job_id": 139903832015,
       "restriction": "JVM on Windows; two independent process invocations."
+    },
+    {
+      "name": "flutter_web_runtime",
+      "status": "pass",
+      "run_id": 45818355923,
+      "job_id": 139903833629,
+      "result": "Chromium test verified first load and reload with SQLite stored sale and exact decimal text."
+    },
+    {
+      "name": "flutter_windows_runtime",
+      "status": "pass",
+      "run_id": 45818355923,
+      "job_id": 139903832177,
+      "restriction": "SQLite reopened twice within Windows Flutter runner; OS process relaunch pending."
+    },
+    {
+      "name": "kotlin_web_runtime_local",
+      "status": "pass",
+      "commit": "617cb59c2306f8c04cfc1d3b511ed654eefb4220",
+      "result": "Kotlin/JS 2.1.20, sql.js 1.13.0, local Chromium; first load and full page reload returned PASS."
+    },
+    {
+      "name": "android_runtime",
+      "status": "unverified",
+      "commit": "617cb59c2306f8c04cfc1d3b511ed654eefb4220",
+      "previous_run_id": 45818355923,
+      "restriction": "Kotlin attempt failed with inconsistent Java/Kotlin JVM targets. Aligned targets and added process-relaunch scripts for both candidates."
     }
   ],
   "blockers": [
-    "Run the shared platform runtime and exact-precision contract on Android, Windows and web for both candidates",
+    "Verify both Android process-relaunch jobs, Windows Flutter OS relaunch, web storage limits, and hardware printing/barcode separately.",
     "Exercise remote authenticated transport, identity enrollment, offline reservation release and stale-backup protection; loopback HTTP scope and replay verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Complete candidate browser runtime coverage; follow Android and Flutter CI outcomes.",
+  "next_step": "Follow the Android and web CI results. Validate device-level revocation and safe handling of reserved stock.",
   "changed_files": [
-    ".github/workflows/proof-local.yml",
-    "proofs/README.md",
-    "proofs/sync/test_http_transport.py"
+    ".github/workflows/proof-runtime.yml",
+    "proofs/platform-runtime/.gitignore",
+    "proofs/platform-runtime/JvmMain.kt",
+    "proofs/platform-runtime/NativeDriver.kt",
+    "proofs/platform-runtime/Runtime.kt",
+    "proofs/platform-runtime/android/build.gradle.kts",
+    "proofs/platform-runtime/android/src/androidTest/kotlin/proof/runtime/RuntimeTest.kt",
+    "proofs/platform-runtime/contract.md",
+    "proofs/platform-runtime/flutter_android.sh",
+    "proofs/platform-runtime/kotlin_android.sh",
+    "proofs/platform-runtime/web/build.gradle.kts",
+    "proofs/platform-runtime/web/kotlin-js-store/yarn.lock",
+    "proofs/platform-runtime/web/settings.gradle.kts",
+    "proofs/platform-runtime/web/src/main/kotlin/WebMain.kt",
+    "proofs/platform-runtime/web/src/main/resources/index.html",
+    "proofs/platform-runtime/web/webpack.config.d/sqlite-browser.js",
+    "proofs/platform-runtime/web_reload.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
