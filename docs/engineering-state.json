@@ -3,11 +3,11 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "ef10213052c22384c4d400b5b9de9398669bef00",
-  "code_sha": "ef10213052c22384c4d400b5b9de9398669bef00",
+  "last_content_commit": "65a04d8b2a8d54b21235ed90f9e5f7b933053fec",
+  "code_sha": "65a04d8b2a8d54b21235ed90f9e5f7b933053fec",
   "kind": "isolated_proof",
   "state": "unverified",
-  "scope": "Isolated synthetic SQLite native JVM and Dart experiments; no production or platform approval",
+  "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
   "acceptance": [
     "Both tracks use identical synthetic sale, journal, access, replay, failure, concurrency and persistence fixtures",
     "Real transactional local storage tested with rollback, concurrency and close/reopen on both tracks",
@@ -22,84 +22,67 @@
       "restriction": "Only isolated proof; CORE-005 not closed"
     },
     {
-      "name": "proof_branch_created",
+      "name": "reference_ci",
       "status": "pass",
-      "branch": "proof/isolated-technology-2026-11-25"
+      "run_id": 45520980135,
+      "commit": "ea5f62e6c70019167e02ce2c39b6e05d3d863182"
     },
     {
-      "name": "proof_reference_sources",
-      "status": "committed_not_verified",
-      "files": [
-        "proofs/kotlin/Reference.kt",
-        "proofs/flutter/reference.dart"
-      ]
+      "name": "fractional_backup_native_ci",
+      "status": "pass",
+      "run_id": 45521513367,
+      "commit": "4c63f1ad06582da5ea02b7c06f42bce661a24552"
     },
     {
-      "name": "proof_reference_ci",
-      "status": "running_unverified",
-      "run_id": 45520893220,
-      "url": "https://github.com/bnmhywb32-spec/BN-MAHYOUB-V3/actions/runs/45520893220"
+      "name": "platform_build_smoke",
+      "status": "pass",
+      "run_id": 45522427620,
+      "commit": "bbf55662dae71f2f20b25fedf1a04489479ef9ed",
+      "restriction": "Six generated smoke builds; runtime adapters excluded"
     },
     {
-      "name": "real_database_transaction_reopen_concurrency",
-      "status": "not_implemented"
+      "name": "kotlin_jvm_local",
+      "status": "pass",
+      "commit": "65a04d8b2a8d54b21235ed90f9e5f7b933053fec",
+      "result": "Reference and durable SQLite fixtures passed with Kotlin 2.1.20 and SQLite JDBC 3.49.1.0"
     },
     {
-      "name": "multiplatform_builds_and_ui",
-      "status": "not_implemented"
+      "name": "python_local_transport_authority_search",
+      "status": "pass",
+      "commit": "65a04d8b2a8d54b21235ed90f9e5f7b933053fec",
+      "command": "python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.offline_authority proofs.search.local_search",
+      "result": "5 tests passed; search p95 5.867 ms on in-memory synthetic fixture"
+    },
+    {
+      "name": "platform_runtime",
+      "status": "unverified",
+      "commit": "65a04d8b2a8d54b21235ed90f9e5f7b933053fec",
+      "restriction": "Flutter relaunch phase implemented. Android, Windows and web runtime with precision and reload evidence not exercised"
+    },
+    {
+      "name": "cloud_http",
+      "status": "blocked",
+      "result": "Audit preflight reported missing isolated test configuration; no network requests"
     },
     {
       "name": "CORE005_final_signoff",
       "status": "pending"
-    },
-    {
-      "name": "reference_ci",
-      "status": "pass",
-      "run_id": 45520980135
-    },
-    {
-      "name": "durable_native_ci",
-      "status": "queued",
-      "run_id": 45521240917
-    },
-    {
-      "name": "durable_native_baseline",
-      "status": "pass",
-      "run_id": 45521240917
-    },
-    {
-      "name": "fractional_backup_native",
-      "status": "in_progress",
-      "run_id": 45521513367
-    },
-    {
-      "name": "fractional_backup_native_verified",
-      "status": "pass",
-      "run_id": 45521513367
-    },
-    {
-      "name": "platform_build_smoke",
-      "status": "in_progress",
-      "run_id": 45521953968
-    },
-    {
-      "name": "platform_build_matrix_verified",
-      "status": "pass",
-      "run_id": 45522427620
     }
   ],
   "blockers": [
-    "Actual platform runtime storage adapters not implemented",
-    "Trusted identity and full replay response not proven",
+    "Run the shared platform runtime and exact-precision contract on Android, Windows and web for both candidates",
+    "Prove trusted identity, revocation, accounting effects and ordered settlement over network transport; SQLite hub evidence covers allocation and receipt only",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Implement and execute durable platform adapters against proofs/platform-runtime/contract.md",
+  "next_step": "Wire the runtime adapters into reproducible platform builds and run first launch, relaunch and exact-precision checks; retain the isolated gate until results are recorded.",
   "changed_files": [
-    "proofs/schema.sql",
-    "proofs/kotlin/Durable.kt",
-    "proofs/flutter/durable.dart",
-    "proofs/flutter/pubspec.yaml",
-    ".github/workflows/proof-durable.yml"
+    "AGENTS.md",
+    "docs/ENGINEERING-PLAYBOOK.md",
+    "proofs/README.md",
+    "proofs/platform-runtime/flutter_main.dart",
+    "proofs/sync/authority_hub.py",
+    "proofs/sync/test_transport.py",
+    ".github/workflows/proof-local.yml"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
