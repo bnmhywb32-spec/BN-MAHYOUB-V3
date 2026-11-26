@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "156da39f370e76ce6449b71c98660c3d024aba1d",
-  "code_sha": "156da39f370e76ce6449b71c98660c3d024aba1d",
+  "last_content_commit": "83a2db51d7b923c34825cb22920a62a5ee8f907a",
+  "code_sha": "83a2db51d7b923c34825cb22920a62a5ee8f907a",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -81,29 +81,6 @@
       "restriction": "Private targeted V2 run passed 62 tests in four suites covering search, stock, sale posting and synchronization. Broad suite attempts hit runner/JVM issues; the final per-class isolated retry ended at an 8-minute timeout (exit 124). No full-suite result or matched V2 task timing is claimed; complete approved capability mapping remains open."
     },
     {
-      "name": "platform_runtime_matrix",
-      "status": "pass",
-      "commit": "a2dabd9960ed9d423b71a1c91576a3d4e9182c54",
-      "run_id": 45822498217,
-      "jobs": {
-        "kotlin_android": 139918069915,
-        "kotlin_windows": 139918069964,
-        "kotlin_web": 139918069754,
-        "flutter_android": 139918069905,
-        "flutter_windows": 139918069800,
-        "flutter_web": 139918070031
-      },
-      "result": "6 of 6 passed after enabling browser coordination. Android and Windows verified separate OS process launches; both Chromium runners verified full reload and controlled contention between tabs."
-    },
-    {
-      "name": "python_transport_ci",
-      "status": "pass",
-      "commit": "d5c17a230445217d3e55aa14359df22f23bea53e",
-      "run_id": 45824177826,
-      "job_id": 139923921480,
-      "result": "15 passed; CI p95 settlement 0.531 ms (100 synthetic sales), in-memory search 6.880 ms."
-    },
-    {
       "name": "search_index_build_comparison",
       "status": "pass",
       "commit": "8193ae8abf51991402f7bfc216a0c6b639ca5d87",
@@ -163,12 +140,6 @@
       "result": "18 local Python tests passed. Recovery rejects revoked sessions, missing company checkpoints and stock allocated after the last receipt. Requires independently retained current checkpoints."
     },
     {
-      "name": "kotlin_cached_offline_boot",
-      "status": "pass",
-      "commit": "bded44b34e9c517cb229f0f7f9c3192a899736d0",
-      "result": "Local Chromium primed assets with the initial IndexedDB publication deliberately aborted. While network-disabled it then committed the first sale and reloaded it from the 100,000-row catalog. Subsequent injected abort and coordinated two-tab startup also passed; newer CI pending."
-    },
-    {
       "name": "restore_journal_semantics",
       "status": "pass",
       "commit": "41d4b79d1e6e5148b3246f527dea9ebdb82470c7",
@@ -177,10 +148,37 @@
       "job_id": 139935165961
     },
     {
+      "name": "python_transport_ci",
+      "status": "pass",
+      "run_id": 45827820945,
+      "commit": "621dca349f2f9b4e1b0c423ef77f33ac38ef5533",
+      "result": "Local transport and search workflow succeeded."
+    },
+    {
+      "name": "platform_runtime_matrix",
+      "status": "pass",
+      "run_id": 45827589961,
+      "commit": "9292d82b5990deb33838437f65e52a9dbded6d16",
+      "result": "All six jobs succeeded."
+    },
+    {
+      "name": "kotlin_cached_offline_boot",
+      "status": "pass",
+      "commit": "bded44b34e9c517cb229f0f7f9c3192a899736d0",
+      "result": "Local Chromium first offline sale and reload on 100,000-row catalog; subsequent platform matrix passed."
+    },
+    {
       "name": "restore_revision_continuity",
       "status": "pass",
       "commit": "156da39f370e76ce6449b71c98660c3d024aba1d",
-      "result": "20 local Python tests passed. Backup with balanced remaining postings and latest valid receipt is blocked when an earlier revision is missing."
+      "result": "20 local tests reported passed; subsequent local CI succeeded."
+    },
+    {
+      "name": "durable_download_retry",
+      "status": "pending",
+      "commit": "83a2db51d7b923c34825cb22920a62a5ee8f907a",
+      "previous_failed_run": 45827821031,
+      "result": "Kotlin dependency download HTTP 429 before compilation; bounded retry added to both Maven downloads. No test assertions changed."
     }
   ],
   "blockers": [
@@ -188,10 +186,9 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify latest CI, then evaluate incremental browser storage and matched V2 user tasks. Production gates remain open.",
+  "next_step": "Verify durable retry CI, then evaluate incremental browser storage and matched V2 user tasks; production gates remain open.",
   "changed_files": [
-    "proofs/sync/authority_hub.py",
-    "proofs/sync/test_transport.py"
+    ".github/workflows/proof-durable.yml"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
