@@ -5,6 +5,7 @@ import kotlin.js.Promise
 external fun initSqlJs(config: dynamic): Promise<dynamic>
 
 external val localStorage: dynamic
+external val navigator: dynamic
 external fun btoa(data: String): String
 external fun atob(data: String): String
 external class Uint8Array(length: Int)
@@ -70,12 +71,13 @@ private fun openBrowser(sql: dynamic): ProofConnection {
 fun main() {
     val config = js("({})")
     config.locateFile = { name: String -> "./" + name }
-    initSqlJs(config).then<Unit> { sql: dynamic ->
-        try {
-            console.log("BN_V3_PROOF: " + runtimeProof { openBrowser(sql) })
-        } catch (error: Throwable) {
-            console.error("BN_V3_PROOF: FAIL: " + error.message)
-        }
+    val launch = initSqlJs(config).then<Promise<String>> { sql: dynamic ->
+        val locks = navigator.locks
+        check(locks != null) { "Browser storage coordination is unavailable" }
+        locks.request(DATABASE_KEY, { runtimeProof { openBrowser(sql) } }).unsafeCast<Promise<String>>()
+    }
+    launch.unsafeCast<Promise<String>>().then<Unit> { result ->
+        console.log("BN_V3_PROOF: " + result)
     }.catch { error ->
         console.error("BN_V3_PROOF: FAIL: " + error.message)
     }

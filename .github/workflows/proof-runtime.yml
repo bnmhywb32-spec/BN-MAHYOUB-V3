@@ -62,7 +62,7 @@ jobs:
           dart run sqflite_common_ffi_web:setup
           flutter build web
           python3 -m pip install --disable-pip-version-check playwright==1.52.0
-          python3 ../proofs/platform-runtime/web_reload.py build/web
+          python3 ../proofs/platform-runtime/web_reload.py build/web --lock-name bn-v3-flutter-runtime-v1
   kotlin-windows:
     if: startsWith(github.ref, 'refs/heads/proof/')
     runs-on: windows-2022
@@ -138,4 +138,4 @@ jobs:
           test -n "$runtime"
           cp "$runtime" build/dist/js/productionExecutable/
           python3 -m pip install --disable-pip-version-check playwright==1.52.0
-          python3 ../web_reload.py build/dist/js/productionExecutable
+          python3 ../web_reload.py build/dist/js/productionExecutable --lock-name bn-v3-kotlin-runtime-v1

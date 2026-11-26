@@ -7,3 +7,5 @@ void writeProofStatus(String message) {
       ..renameSync('runtime-result.txt');
   }
 }
+
+Future<String> coordinateProof(Future<String> Function() run) => run();

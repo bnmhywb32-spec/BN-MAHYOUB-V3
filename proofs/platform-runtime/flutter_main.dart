@@ -77,7 +77,7 @@ Future<String> proof({String path = 'bn_v3_runtime_proof.db'}) async {
 }
 void main() {
  WidgetsFlutterBinding.ensureInitialized();
- final result = proof().then((message) {
+ final result = coordinateProof(proof).then((message) {
   debugPrint('BN_V3_PROOF: $message');
   writeProofStatus(message);
   return message;

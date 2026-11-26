@@ -1,1 +1,0 @@
-void writeProofStatus(String message) {}

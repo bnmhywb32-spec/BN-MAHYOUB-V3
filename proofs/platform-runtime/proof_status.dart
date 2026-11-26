@@ -1,1 +1,1 @@
-export 'proof_status_stub.dart' if (dart.library.io) 'proof_status_io.dart';
+export 'proof_status_io.dart' if (dart.library.js_interop) 'proof_status_web.dart';
