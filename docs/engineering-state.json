@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "41d4b79d1e6e5148b3246f527dea9ebdb82470c7",
-  "code_sha": "41d4b79d1e6e5148b3246f527dea9ebdb82470c7",
+  "last_content_commit": "bded44b34e9c517cb229f0f7f9c3192a899736d0",
+  "code_sha": "bded44b34e9c517cb229f0f7f9c3192a899736d0",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -165,8 +165,8 @@
     {
       "name": "kotlin_cached_offline_boot",
       "status": "pass",
-      "commit": "794cd06a323b4999dc55599238db144f22bf0551",
-      "result": "Local Chromium controlled reload with Playwright network disabled reopened an IndexedDB sale and 100,000-row catalog. Requires successful online priming; asset upgrades and cache eviction are unverified."
+      "commit": "bded44b34e9c517cb229f0f7f9c3192a899736d0",
+      "result": "Local Chromium primed assets with the initial IndexedDB publication deliberately aborted. While network-disabled it then committed the first sale and reloaded it from the 100,000-row catalog. Subsequent injected abort and coordinated two-tab startup also passed; newer CI pending."
     },
     {
       "name": "restore_journal_semantics",
@@ -182,8 +182,7 @@
   ],
   "next_step": "Confirm pushed CI, then continue scalable browser persistence and matched V2 task proof under existing gates.",
   "changed_files": [
-    "proofs/sync/authority_hub.py",
-    "proofs/sync/test_transport.py"
+    "proofs/platform-runtime/web_reload.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
