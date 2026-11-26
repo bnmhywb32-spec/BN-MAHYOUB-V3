@@ -78,7 +78,7 @@
       "name": "v2_capability_and_outcome_baseline",
       "status": "unverified",
       "commit": "a4299ed04346892c03c4e31bb8d02ee508d7f2bd",
-      "restriction": "Comparison criteria specified in FIRST-RELEASE. Matched V2 timings, user task results and complete approved capability inventory have not been established."
+      "restriction": "Matched V2 task timings and complete approved capability inventory remain open. A private local V2 copy compiled with Android 36 and a complete JDK; the full host test run encountered a Robolectric filesystem issue and then a native JVM JIT crash. Runtime configuration and retry evidence held locally; no V2 source or identifiers published."
     },
     {
       "name": "platform_runtime_matrix",
@@ -98,10 +98,10 @@
     {
       "name": "python_transport_ci",
       "status": "pass",
-      "commit": "8136d89623d60c7516ee1e94d5386456f529f8c7",
-      "run_id": 45821545499,
-      "job_id": 139914783050,
-      "result": "12 passed at the search-index package. CI p95 1.038 ms settlement and 6.173 ms search; current 13-test package awaiting its own CI."
+      "commit": "575610f1b6394a1675a2227e0d4ac02443c7ffb4",
+      "run_id": 45821924257,
+      "job_id": 139916092952,
+      "result": "13 tests passed. CI p95 0.582 ms SQLite settlement on 100 synthetic sales and 6.814 ms for in-memory search."
     },
     {
       "name": "search_index_build_comparison",
