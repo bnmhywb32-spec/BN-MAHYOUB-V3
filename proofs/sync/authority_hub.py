@@ -52,10 +52,11 @@ class AuthorityHub:
         """Open a staged snapshot only if independently retained receipts are present."""
         if not authorization or set(history) != set(authorization) or not set(checkpoints) <= set(authorization):
             raise ValueError("RECOVERY_CHECKPOINT_REQUIRED")
-        uri = Path(path).resolve().as_uri() + "?mode=ro"
+        uri = Path(path).resolve().as_uri() + "?mode=rw"
         snapshot = sqlite3.connect(uri, uri=True)
         try:
-            snapshot.execute("BEGIN")
+            snapshot.execute("PRAGMA foreign_keys = ON")
+            snapshot.execute("BEGIN IMMEDIATE")
             if snapshot.execute("PRAGMA integrity_check").fetchall() != [("ok",)]:
                 raise ValueError("RECOVERY_CORRUPT")
             companies = {row[0] for row in snapshot.execute(
@@ -88,9 +89,13 @@ class AuthorityHub:
             for company, expected in history.items():
                 if cls._history_digest(snapshot, company) != expected:
                     raise ValueError("RECOVERY_HISTORY_MISMATCH")
-        finally:
+            snapshot.commit()
+        except BaseException:
             snapshot.close()
-        return cls(path)
+            raise
+        restored = cls.__new__(cls)
+        restored.db = snapshot
+        return restored
 
     @staticmethod
     def _verify_recovered_journal(db):

@@ -398,6 +398,45 @@ class TransportProof(unittest.TestCase):
         self.assertEqual(concurrent, expected)
         self.assertEqual(self.hub.recovery_checkpoint("A")["receipt"], second)
 
+    def test_verified_restore_uses_the_same_connection_and_missing_path_fails(self):
+        self.hub.seed("A", "stock", 1)
+        self.hub.allocate("A", "seller", "stock", 1)
+        token = self.hub.issue_session("A", "seller", can_submit=True)
+        sale = {"kind": "sale", "resource": "stock", "amount": 1}
+        receipt = self.hub.submit(token, "one", sale)
+        checkpoint = self.hub.recovery_checkpoint("A")
+        path = self.path / "staged.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+        original_connect = sqlite3.connect
+        opened = []
+
+        def track_connection(*args, **kwargs):
+            connection = original_connect(*args, **kwargs)
+            opened.append(connection)
+            return connection
+
+        with patch("proofs.sync.authority_hub.sqlite3.connect", side_effect=track_connection):
+            restored = AuthorityHub.open_verified_backup(
+                path, {"A": receipt},
+                authorization={"A": checkpoint["authorization"]},
+                history={"A": checkpoint["history"]},
+            )
+        with closing(restored.db):
+            self.assertEqual(len(opened), 1)
+            self.assertIs(restored.db, opened[0])
+            self.assertEqual(restored.db.execute("PRAGMA foreign_keys").fetchone(), (1,))
+            self.assertEqual(restored.submit(token, "one", sale), receipt)
+
+        missing = self.path / "missing.db"
+        with self.assertRaises(sqlite3.OperationalError):
+            AuthorityHub.open_verified_backup(
+                missing, {"A": receipt},
+                authorization={"A": checkpoint["authorization"]},
+                history={"A": checkpoint["history"]},
+            )
+        self.assertFalse(missing.exists())
+
 
 if __name__ == "__main__":
     unittest.main()
