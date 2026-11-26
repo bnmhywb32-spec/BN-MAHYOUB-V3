@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "13e537e495a4a7201b41f0bc12d8f2fb98f8d288",
-  "code_sha": "13e537e495a4a7201b41f0bc12d8f2fb98f8d288",
+  "last_content_commit": "65966a11c1a31b0dc2b17d079e024533f9f66720",
+  "code_sha": "65966a11c1a31b0dc2b17d079e024533f9f66720",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -258,6 +258,12 @@
       "status": "verified",
       "commit": "13e537e495a4a7201b41f0bc12d8f2fb98f8d288",
       "result": "33 local tests passed. Search derives company/device from session and validates branch grant in the same SQLite transaction. Tests cover revoked access, separate companies and databases, revocation concurrent with a read, scope recovery and old backups. Administrative grants and user identity remain synthetic; platform integration and CI pending."
+    },
+    {
+      "name": "online_backup_snapshot_consistency",
+      "status": "verified",
+      "commit": "65966a11c1a31b0dc2b17d079e024533f9f66720",
+      "result": "35 local Python tests passed. Under WAL, a concurrent sale commits while backup and every company checkpoint remain at one earlier snapshot; a newer trusted checkpoint rejects it. Existing destination is preserved and injected staging failure cleans up. Linux local fixture; platform filesystem and external checkpoint durability pending."
     }
   ],
   "blockers": [
@@ -265,14 +271,11 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify latest search and recovery CI; continue proof of secure device provisioning and V2 task comparisons while maintaining the production gate.",
+  "next_step": "Verify scoped search and backup CI, then continue independent device identity and matched V2 task evidence.",
   "changed_files": [
-    ".github/workflows/proof-local.yml",
-    "proofs/README.md",
-    "proofs/search/scoped_search.py",
-    "proofs/search/test_scoped_search.py",
     "proofs/sync/authority_hub.py",
-    "proofs/sync/test_transport.py"
+    "proofs/sync/test_transport.py",
+    "proofs/README.md"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
