@@ -1,3 +1,5 @@
+import copy
+import secrets
 import sqlite3
 import tempfile
 import time
@@ -9,6 +11,7 @@ from threading import Event
 from unittest.mock import patch
 
 from proofs.sync.authority_hub import AuthorityHub
+from proofs.sync.checkpoint_auth import sign_checkpoint, verify_checkpoint
 from proofs.sync.local_queue import Queue
 from proofs.sync.offline_sale import OfflineSale
 
@@ -436,6 +439,46 @@ class TransportProof(unittest.TestCase):
                 history={"A": checkpoint["history"]},
             )
         self.assertFalse(missing.exists())
+
+    def test_authenticated_latest_checkpoint_rejects_tampering_and_replay(self):
+        self.hub.seed("A", "stock", 1)
+        self.hub.allocate("A", "seller", "stock", 1)
+        token = self.hub.issue_session("A", "seller", can_submit=True)
+        sale = {"kind": "sale", "resource": "stock", "amount": 1}
+        receipt = self.hub.submit(token, "one", sale)
+        key = secrets.token_bytes(32)
+        old = sign_checkpoint("A", self.hub.recovery_checkpoint("A"), key)
+        self.hub.revoke_device("A", "seller")
+        latest = sign_checkpoint("A", self.hub.recovery_checkpoint("A"), key)
+        trusted_tag = latest["signature"]
+
+        with self.assertRaisesRegex(ValueError, "^CHECKPOINT_STALE$"):
+            verify_checkpoint(old, "A", key, trusted_tag)
+        tampered = copy.deepcopy(latest)
+        tampered["checkpoint"]["receipt"]["payload"]["amount"] = 2
+        with self.assertRaisesRegex(ValueError, "^CHECKPOINT_DENIED$"):
+            verify_checkpoint(tampered, "A", key, trusted_tag)
+        with self.assertRaisesRegex(ValueError, "^CHECKPOINT_DENIED$"):
+            verify_checkpoint(latest, "B", key, trusted_tag)
+        with self.assertRaisesRegex(ValueError, "^CHECKPOINT_DENIED$"):
+            verify_checkpoint(latest, "A", secrets.token_bytes(32), trusted_tag)
+        for invalid in ("ا" * 64, "0" * 63, 0):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(ValueError, "^CHECKPOINT_DENIED$"):
+                verify_checkpoint(dict(latest, signature=invalid), "A", key, trusted_tag)
+
+        checkpoint = verify_checkpoint(latest, "A", key, trusted_tag)
+        path = self.path / "signed.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+        restored = AuthorityHub.open_verified_backup(
+            path, {"A": checkpoint["receipt"]},
+            authorization={"A": checkpoint["authorization"]},
+            history={"A": checkpoint["history"]},
+        )
+        with closing(restored.db):
+            self.assertEqual(checkpoint["receipt"], receipt)
+            with self.assertRaisesRegex(ValueError, "^SYNC_DENIED$"):
+                restored.submit(token, "one", sale)
 
 
 if __name__ == "__main__":
