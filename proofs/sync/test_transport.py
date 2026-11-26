@@ -261,6 +261,34 @@ class TransportProof(unittest.TestCase):
                 path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")}
             )
 
+    def test_restore_requires_authorization_for_companies_without_sales(self):
+        self.hub.issue_session("B", "observer")
+        path = self.path / "two-companies.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_CHECKPOINT_REQUIRED$"):
+            AuthorityHub.open_verified_backup(
+                path, {}, authorization={"A": self.hub.authorization_checkpoint("A")}
+            )
+        with closing(AuthorityHub.open_verified_backup(
+            path, {}, authorization={"B": self.hub.authorization_checkpoint("B")}
+        ).db):
+            pass
+
+    def test_restore_cannot_release_stock_allocated_after_last_receipt(self):
+        self.hub.seed("A", "stock", 2)
+        self.hub.allocate("A", "seller", "stock", 1)
+        token = self.hub.issue_session("A", "seller", can_submit=True)
+        receipt = self.hub.submit(token, "one", {"kind": "sale", "resource": "stock", "amount": 1})
+        path = self.path / "pre-allocation.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+        self.hub.allocate("A", "offline", "stock", 1)
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_AUTHORIZATION_MISMATCH$"):
+            AuthorityHub.open_verified_backup(
+                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")}
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

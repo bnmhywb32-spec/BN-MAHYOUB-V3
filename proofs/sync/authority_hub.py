@@ -49,7 +49,7 @@ class AuthorityHub:
     @classmethod
     def open_verified_backup(cls, path, checkpoints, *, authorization):
         """Open a staged snapshot only if independently retained receipts are present."""
-        if not checkpoints or set(authorization) != set(checkpoints):
+        if not authorization or not set(checkpoints) <= set(authorization):
             raise ValueError("RECOVERY_CHECKPOINT_REQUIRED")
         uri = Path(path).resolve().as_uri() + "?mode=ro"
         snapshot = sqlite3.connect(uri, uri=True)
@@ -57,6 +57,16 @@ class AuthorityHub:
             snapshot.execute("BEGIN")
             if snapshot.execute("PRAGMA integrity_check").fetchall() != [("ok",)]:
                 raise ValueError("RECOVERY_CORRUPT")
+            companies = {row[0] for row in snapshot.execute(
+                "SELECT company FROM devices UNION SELECT company FROM sessions UNION "
+                "SELECT company FROM balances UNION SELECT company FROM grants UNION "
+                "SELECT company FROM operations"
+            )}
+            posting_companies = {row[0] for row in snapshot.execute(
+                "SELECT DISTINCT company FROM operations"
+            )}
+            if not companies <= set(authorization) or not posting_companies <= set(checkpoints):
+                raise ValueError("RECOVERY_CHECKPOINT_REQUIRED")
             for company, expected in checkpoints.items():
                 row = snapshot.execute(
                     "SELECT id, payload, revision, received_at FROM operations "
@@ -65,7 +75,8 @@ class AuthorityHub:
                 ).fetchone()
                 if row is None or cls._receipt(company, *row) != expected:
                     raise ValueError("RECOVERY_CHECKPOINT_MISMATCH")
-                if cls._authorization_digest(snapshot, company) != authorization[company]:
+            for company, expected in authorization.items():
+                if cls._authorization_digest(snapshot, company) != expected:
                     raise ValueError("RECOVERY_AUTHORIZATION_MISMATCH")
         finally:
             snapshot.close()
@@ -81,11 +92,18 @@ class AuthorityHub:
             "LEFT JOIN session_writers AS w ON w.digest=s.digest "
             "WHERE s.company=? ORDER BY s.digest", (company,)
         ).fetchall()
-        data = json.dumps([devices, sessions], separators=(",", ":")).encode()
+        balances = db.execute(
+            "SELECT resource, free FROM balances WHERE company=? ORDER BY resource", (company,)
+        ).fetchall()
+        grants = db.execute(
+            "SELECT device, resource, remaining FROM grants WHERE company=? ORDER BY device, resource",
+            (company,),
+        ).fetchall()
+        data = json.dumps([devices, sessions, balances, grants], separators=(",", ":")).encode()
         return hashlib.sha256(data).hexdigest()
 
     def authorization_checkpoint(self, company):
-        """Capture authorization state for independent retention beside a receipt."""
+        """Capture authorization and reserved balances for independent retention."""
         with self.db:
             self.db.execute("BEGIN")
             return self._authorization_digest(self.db, company)
