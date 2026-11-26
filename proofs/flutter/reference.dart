@@ -29,9 +29,7 @@ class ProofLedger {
       return previous.$2;
     }
     if (c.quantityMilli > stockMilli) throw StateError('INSUFFICIENT_STOCK');
-    if (c.quantityMilli % 1000 != 0) throw StateError('QUANTITY_PRECISION');
-    final units = c.quantityMilli ~/ 1000;
-    final revenue = units * c.unitPriceMinor, cost = units * 60;
+    final revenue = roundedPosting(c.quantityMilli, c.unitPriceMinor), cost = roundedPosting(c.quantityMilli, 60);
     final lines = <(String, int, int)>[
       ('cash', revenue, 0), ('revenue', 0, revenue),
       ('cogs', cost, 0), ('inventory', 0, cost)
@@ -49,7 +47,20 @@ class ProofLedger {
     return result;
   }
 }
+int roundedPosting(int quantity, int price) {
+  if (quantity <= 0 || price < 0) throw ArgumentError('INVALID_AMOUNT');
+  final result = (BigInt.from(quantity) * BigInt.from(price) + BigInt.from(500)) ~/ BigInt.from(1000);
+  if (result > BigInt.parse('9007199254740991')) throw StateError('UNSAFE_REFERENCE_INTEGER');
+  return result.toInt();
+}
 void main() {
+  for (final (qty, expected) in [(1, 0), (5, 1), (125, 13), (499, 50), (500, 50), (999, 100)]) {
+    final result = ProofLedger().sell(SaleCommand('fraction', 'A', 'A1', 'PROOF-001', qty, 100, 'cashier-A'));
+    if (result.lines[0].$2 != expected || result.stockMilli != 10000 - qty ||
+        result.lines.fold<int>(0, (s,l) => s+l.$2) != result.lines.fold<int>(0, (s,l) => s+l.$3)) {
+      throw StateError('FRACTION_CONTRACT');
+    }
+  }
   final ledger = ProofLedger();
   final c = SaleCommand('cmd-A-1', 'A', 'A1', 'PROOF-001', 2000, 100, 'cashier-A');
   final result = ledger.sell(c);
