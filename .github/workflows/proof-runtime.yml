@@ -53,7 +53,7 @@ jobs:
         with:
           api-level: 35
           arch: x86_64
-          script: cd runtime_app && flutter test integration_test/durable_test.dart -d emulator-5554
+          script: bash proofs/platform-runtime/flutter_android.sh "$GITHUB_WORKSPACE/runtime_app"
       - if: matrix.target == 'web'
         working-directory: runtime_app
         run: |
@@ -88,7 +88,7 @@ jobs:
           $stdlib = Join-Path $lib 'kotlin-stdlib.jar'
           $dependencies = @((Join-Path $work 'sqlite-jvm.jar'), (Join-Path $work 'sqlite-bundled-jvm.jar')) -join ';'
           $jar = Join-Path $work 'proof.jar'
-          java -cp "$lib/*" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -no-stdlib -no-reflect -classpath "$stdlib;$dependencies" -d $jar proofs/platform-runtime/Runtime.kt proofs/platform-runtime/JvmMain.kt
+          java -cp "$lib/*" org.jetbrains.kotlin.cli.jvm.K2JVMCompiler -no-stdlib -no-reflect -classpath "$stdlib;$dependencies" -d $jar proofs/platform-runtime/Runtime.kt proofs/platform-runtime/NativeDriver.kt proofs/platform-runtime/JvmMain.kt
           $database = Join-Path $work 'runtime.db'
           java -cp "$jar;$stdlib;$dependencies" JvmMainKt $database seed
           java -cp "$jar;$stdlib;$dependencies" JvmMainKt $database relaunch
@@ -114,4 +114,26 @@ jobs:
         with:
           api-level: 35
           arch: x86_64
-          script: gradle -p proofs/platform-runtime/android connectedDebugAndroidTest --no-daemon --stacktrace
+          script: bash proofs/platform-runtime/kotlin_android.sh proofs/platform-runtime/android
+  kotlin-web:
+    if: startsWith(github.ref, 'refs/heads/proof/')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+      - run: |
+          set -euo pipefail
+          cd proofs/platform-runtime/web
+          gradle browserDistribution --no-daemon --stacktrace
+          runtime="$(find build -path '*/sql.js/dist/sql-wasm.wasm' -print -quit)"
+          test -n "$runtime"
+          cp "$runtime" build/dist/js/productionExecutable/
+          python3 -m pip install --disable-pip-version-check playwright==1.52.0
+          python3 ../web_reload.py build/dist/js/productionExecutable

@@ -7,7 +7,7 @@ fun main(args: Array<String>) {
         "relaunch" -> "PASS: persisted sale verified after relaunch"
         else -> error("Unknown phase")
     }
-    val actual = runtimeProof(BundledSQLiteDriver(), args[0])
+    val actual = runtimeProof { openNative(BundledSQLiteDriver(), args[0]) }
     check(actual == expected) { "Expected '$expected', got '$actual'" }
     println(actual)
 }

@@ -6,6 +6,10 @@ plugins {
 android {
     namespace = "proof.runtime"
     compileSdk = 35
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 
     defaultConfig {
         applicationId = "proof.runtime"
@@ -16,14 +20,15 @@ android {
 }
 
 val copyRuntimeContract by tasks.registering(Copy::class) {
-    from("../Runtime.kt")
+    from("../Runtime.kt", "../NativeDriver.kt")
     into(layout.buildDirectory.dir("generated/runtime-contract"))
 }
 
 tasks.named("preBuild").configure { dependsOn(copyRuntimeContract) }
 
-kotlin.sourceSets.named("main") {
-    kotlin.srcDir(layout.buildDirectory.dir("generated/runtime-contract"))
+kotlin {
+    jvmToolchain(17)
+    sourceSets.named("main") { kotlin.srcDir(copyRuntimeContract) }
 }
 
 dependencies {

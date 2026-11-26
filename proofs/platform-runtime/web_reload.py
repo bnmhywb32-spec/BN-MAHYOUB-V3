@@ -1,5 +1,6 @@
-"""Run the built Flutter application twice on the same Chromium storage origin."""
+"""Run the built platform proof twice on the same Chromium storage origin."""
 
+import os
 import sys
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -15,7 +16,10 @@ def run(build_path):
         thread.start()
         try:
             with sync_playwright() as playwright:
-                browser = playwright.chromium.launch(channel="chrome")
+                executable = os.getenv("BN_PROOF_CHROMIUM")
+                browser = playwright.chromium.launch(
+                    **({"executable_path": executable} if executable else {"channel": "chrome"})
+                )
                 page = browser.new_page()
                 url = f"http://127.0.0.1:{server.server_port}"
 

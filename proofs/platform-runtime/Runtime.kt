@@ -1,10 +1,18 @@
-import androidx.sqlite.SQLiteConnection
-import androidx.sqlite.SQLiteDriver
-import androidx.sqlite.execSQL
+interface ProofConnection : AutoCloseable {
+    fun prepare(sql: String): ProofStatement
+    fun execSQL(sql: String)
+}
 
-fun runtimeProof(driver: SQLiteDriver, path: String): String {
- fun open()=driver.open(path)
- fun scalar(c:SQLiteConnection,sql:String):Long=c.prepare(sql).use { check(it.step());it.getLong(0) }
+interface ProofStatement : AutoCloseable {
+    fun bindText(index: Int, value: String)
+    fun bindLong(index: Int, value: Long)
+    fun step(): Boolean
+    fun getLong(index: Int): Long
+    fun getText(index: Int): String
+}
+
+fun runtimeProof(open: () -> ProofConnection): String {
+ fun scalar(c:ProofConnection,sql:String):Long=c.prepare(sql).use { check(it.step());it.getLong(0) }
  var db=open()
  try {
  db.execSQL("CREATE TABLE IF NOT EXISTS stock(company TEXT PRIMARY KEY, qty INTEGER NOT NULL CHECK(qty>=0))")
@@ -29,7 +37,7 @@ fun runtimeProof(driver: SQLiteDriver, path: String): String {
  db.prepare("INSERT INTO outbox VALUES(?)").use{it.bindText(1,id);it.step()}
  if(fail)error("injected")
  db.execSQL("COMMIT");return remaining
- }catch(e:Throwable){db.execSQL("ROLLBACK");throw e}
+ }catch(e:Throwable){runCatching { db.execSQL("ROLLBACK") };throw e}
  }
  fun verifyState() {
  db.prepare("SELECT CAST(CAST('9007199254740993' AS INTEGER) + 2 AS TEXT) AS exact_value").use {
