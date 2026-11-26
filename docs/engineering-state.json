@@ -83,17 +83,17 @@
     {
       "name": "platform_runtime_matrix",
       "status": "pass",
-      "commit": "175172b5180e3470fd021e26d026ec785db71958",
-      "run_id": 45819426997,
+      "commit": "a2dabd9960ed9d423b71a1c91576a3d4e9182c54",
+      "run_id": 45822498217,
       "jobs": {
-        "kotlin_android": 139907510585,
-        "kotlin_windows": 139907513429,
-        "kotlin_web": 139907511017,
-        "flutter_android": 139907510979,
-        "flutter_windows": 139907510809,
-        "flutter_web": 139907510882
+        "kotlin_android": 139918069915,
+        "kotlin_windows": 139918069964,
+        "kotlin_web": 139918069754,
+        "flutter_android": 139918069905,
+        "flutter_windows": 139918069800,
+        "flutter_web": 139918070031
       },
-      "result": "6 of 6 ran the same synthetic sale contract with exact values. Native runners persisted across separate process launches; web runners persisted across Chromium reload."
+      "result": "6 of 6 passed after enabling browser coordination. Android and Windows verified separate OS process launches; both Chromium runners verified full reload and controlled contention between tabs."
     },
     {
       "name": "python_transport_ci",
