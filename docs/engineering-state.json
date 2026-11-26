@@ -78,7 +78,7 @@
       "name": "v2_capability_and_outcome_baseline",
       "status": "unverified",
       "commit": "a4299ed04346892c03c4e31bb8d02ee508d7f2bd",
-      "restriction": "Matched V2 task timings and complete approved capability inventory remain open. A private local V2 copy compiled with Android 36 and a complete JDK; the full host test run encountered a Robolectric filesystem issue and then a native JVM JIT crash. Runtime configuration and retry evidence held locally; no V2 source or identifiers published."
+      "restriction": "Private targeted run passed 62 tests across four suites covering search, stock, sale posting and synchronization. Used source-only archive, Android 36 and a corrected JVM test environment. V2 functional task timings and complete approved capability mapping remain unverified. The full Gradle suite is being retried with worker isolation."
     },
     {
       "name": "platform_runtime_matrix",
@@ -98,10 +98,10 @@
     {
       "name": "python_transport_ci",
       "status": "pass",
-      "commit": "575610f1b6394a1675a2227e0d4ac02443c7ffb4",
-      "run_id": 45821924257,
-      "job_id": 139916092952,
-      "result": "13 tests passed. CI p95 0.582 ms SQLite settlement on 100 synthetic sales and 6.814 ms for in-memory search."
+      "commit": "3e15db487fdcfb9f77d02f276aeb2fdc487b7d72",
+      "run_id": 45822841202,
+      "job_id": 139919254686,
+      "result": "14 passed. CI p95 settlement 0.523 ms (100 synthetic sales), search 6.918 ms in memory."
     },
     {
       "name": "search_index_build_comparison",
@@ -118,20 +118,29 @@
     },
     {
       "name": "flutter_web_tabs_ci",
-      "status": "unverified",
+      "status": "pass",
       "commit": "805e45071bbbde23c37c71160b6d9dfe30d31920",
       "restriction": "Same contention harness configured on Flutter; pending GitHub Actions.",
-      "run_id": 45822498217
+      "run_id": 45822498217,
+      "job_id": 139918070031,
+      "result": "Chromium first load and full reload passed. Two tabs queued behind one Web Lock; one seeded and one replayed the stored sale."
     },
     {
       "name": "search_disk_batch_comparison",
       "status": "pass",
       "commit": "81d31e4aa7c04f1d58aa3b2d07c6725a33230dc8",
       "result": "10,000 varied synthetic items, disk SQLite default DELETE journal: per item 10.301 s, single atomic batch 0.156 s. Both reopened with matching search results and 3,235,840-byte files. Scope: one local paired run."
+    },
+    {
+      "name": "kotlin_web_tabs_ci",
+      "status": "pass",
+      "run_id": 45822498217,
+      "job_id": 139918069754,
+      "result": "Same Chromium lock-contention harness succeeded alongside first load and reload."
     }
   ],
   "blockers": [
-    "Hardware barcode/printing, Flutter web tab-contention CI, browser eviction/offline assets and comparable user-task evidence remain open.",
+    "Hardware barcode/printing, browser storage eviction and offline assets, and comparable user-task evidence. Two-tab Chromium contention is verified.",
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
