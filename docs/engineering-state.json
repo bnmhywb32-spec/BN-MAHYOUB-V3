@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "81d31e4aa7c04f1d58aa3b2d07c6725a33230dc8",
-  "code_sha": "81d31e4aa7c04f1d58aa3b2d07c6725a33230dc8",
+  "last_content_commit": "a4b21abd6ca42d8c13023b0aec514f936d776246",
+  "code_sha": "a4b21abd6ca42d8c13023b0aec514f936d776246",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -64,9 +64,9 @@
     {
       "name": "python_local_transport_authority_search",
       "status": "pass",
-      "commit": "81d31e4aa7c04f1d58aa3b2d07c6725a33230dc8",
+      "commit": "a4b21abd6ca42d8c13023b0aec514f936d776246",
       "command": "python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.test_http_transport proofs.sync.offline_authority proofs.search.local_search",
-      "result": "14 tests passed including whole-batch rollback on failed item indexing. Local p95 settlement 1.324 ms, in-memory search 5.772 ms."
+      "result": "15 passed. Catalog rollback verified with deferred and autocommit connections and inside a caller transaction. Local search p95 53.529 ms during concurrent V2 tests."
     },
     {
       "name": "kotlin_web_runtime_local",
