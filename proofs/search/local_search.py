@@ -21,9 +21,26 @@ class Search:
         """)
     def put(self, company, branch, sku, barcode, name, brand, aliases=""):
         with self.db:
-            self.db.execute("INSERT OR REPLACE INTO items VALUES(?,?,?,?,?,?,?)",(company,branch,sku,barcode,name,brand,aliases))
-            self.db.execute("DELETE FROM terms WHERE company=? AND branch=? AND sku=?",(company,branch,sku))
-            self.db.executemany("INSERT INTO terms VALUES(?,?,?,?)",[(company,branch,t,sku) for t in set(normalize(" ".join([name,brand,aliases,sku])).split())])
+            self._put(company, branch, sku, barcode, name, brand, aliases)
+
+    def put_many(self, items):
+        """Atomically publish a batch of items and all corresponding search terms."""
+        with self.db:
+            for item in items:
+                self._put(*item)
+
+    def _put(self, company, branch, sku, barcode, name, brand, aliases=""):
+        tokens = set(normalize(" ".join([name, brand, aliases, sku])).split())
+        self.db.execute(
+            "INSERT OR REPLACE INTO items VALUES(?,?,?,?,?,?,?)",
+            (company, branch, sku, barcode, name, brand, aliases),
+        )
+        self.db.execute("DELETE FROM terms WHERE company=? AND branch=? AND sku=?", (company, branch, sku))
+        self.db.executemany(
+            "INSERT INTO terms VALUES(?,?,?,?)",
+            [(company, branch, token, sku) for token in tokens],
+        )
+
     def find(self, company, branch, query, limit=20):
         if type(limit) is not int or not 1<=limit<=100: raise ValueError("INVALID_LIMIT")
         query = query.strip()
@@ -91,6 +108,22 @@ class Proof(unittest.TestCase):
             ("a", "1", "item"),
         ).fetchall()
         self.assertTrue(any("terms_by_item" in node[-1] for node in plan), plan)
+
+    def test_bulk_update_keeps_items_and_index_atomic(self):
+        db = sqlite3.connect(":memory:")
+        self.addCleanup(db.close)
+        search = Search(db)
+        search.put("a", "1", "old", "001", "قلم", "النجم")
+        valid = ("a", "1", "old", "001", "دفتر", "النجم")
+        invalid = ("a", "1", "new", "002", None, "النجم")
+        with self.assertRaises(TypeError):
+            search.put_many([valid, invalid])
+        self.assertEqual([row[0] for row in search.find("a", "1", "قلم")], ["old"])
+        self.assertEqual(search.find("a", "1", "دفتر"), [])
+        search.put_many([valid, ("a", "1", "new", "002", "حبر", "النجم")])
+        self.assertEqual(search.find("a", "1", "قلم"), [])
+        self.assertEqual([row[0] for row in search.find("a", "1", "دفتر")], ["old"])
+        self.assertEqual([row[0] for row in search.find("a", "1", "حبر")], ["new"])
 
     def test_fixture(self):
         s=Search(sqlite3.connect(":memory:"))
