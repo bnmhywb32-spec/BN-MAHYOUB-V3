@@ -20,6 +20,8 @@ fun runtimeProof(open: () -> ProofConnection): String {
  db.execSQL("CREATE TABLE IF NOT EXISTS journal(id TEXT, account TEXT, debit INTEGER, credit INTEGER, PRIMARY KEY(id,account))")
  db.execSQL("CREATE TABLE IF NOT EXISTS outbox(id TEXT PRIMARY KEY)")
  db.execSQL("CREATE TABLE IF NOT EXISTS proof_complete(id INTEGER PRIMARY KEY)")
+ db.execSQL("CREATE TABLE IF NOT EXISTS exact_probe(id INTEGER PRIMARY KEY, amount INTEGER NOT NULL)")
+ db.execSQL("INSERT OR IGNORE INTO exact_probe VALUES(1,CAST('9007199254740993' AS INTEGER))")
  db.execSQL("INSERT OR IGNORE INTO stock VALUES('A',10),('B',10)")
  fun sell(id:String,qty:Long,fail:Boolean=false):Long {
  require(id in listOf("one","fail") && qty>0)
@@ -40,8 +42,14 @@ fun runtimeProof(open: () -> ProofConnection): String {
  }catch(e:Throwable){runCatching { db.execSQL("ROLLBACK") };throw e}
  }
  fun verifyState() {
- db.prepare("SELECT CAST(CAST('9007199254740993' AS INTEGER) + 2 AS TEXT) AS exact_value").use {
- check(it.step() && it.getText(0)=="9007199254740995")
+ db.prepare("SELECT CAST(amount AS TEXT), typeof(amount) FROM exact_probe WHERE id=1").use {
+ check(it.step() && it.getText(1)=="integer")
+ val exact=it.getText(0)
+ check(exact=="9007199254740993")
+ check((exact.toLong()+2L).toString()=="9007199254740995")
+ }
+ db.prepare("SELECT amount FROM exact_probe WHERE id=1").use {
+ check(it.step() && it.getLong(0)==9007199254740993L)
  }
  check(scalar(db,"SELECT count(*) FROM sales WHERE id='one'")==1L)
  check(sell("one",2)==8L)
