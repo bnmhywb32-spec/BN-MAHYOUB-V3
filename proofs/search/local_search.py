@@ -20,14 +20,19 @@ class Search:
         CREATE INDEX IF NOT EXISTS terms_by_item ON terms(company,branch,sku);
         """)
     def put(self, company, branch, sku, barcode, name, brand, aliases=""):
-        with self.db:
-            self._put(company, branch, sku, barcode, name, brand, aliases)
+        self.put_many(((company, branch, sku, barcode, name, brand, aliases),))
 
     def put_many(self, items):
-        """Atomically publish a batch of items and all corresponding search terms."""
-        with self.db:
+        """Publish the whole batch, including when the connection uses autocommit."""
+        self.db.execute("SAVEPOINT catalog_update")
+        try:
             for item in items:
                 self._put(*item)
+        except BaseException:
+            self.db.execute("ROLLBACK TO catalog_update")
+            raise
+        finally:
+            self.db.execute("RELEASE catalog_update")
 
     def _put(self, company, branch, sku, barcode, name, brand, aliases=""):
         tokens = set(normalize(" ".join([name, brand, aliases, sku])).split())
@@ -110,20 +115,32 @@ class Proof(unittest.TestCase):
         self.assertTrue(any("terms_by_item" in node[-1] for node in plan), plan)
 
     def test_bulk_update_keeps_items_and_index_atomic(self):
+        for isolation_level in ("DEFERRED", None):
+            with self.subTest(isolation_level=isolation_level):
+                db = sqlite3.connect(":memory:", isolation_level=isolation_level)
+                self.addCleanup(db.close)
+                search = Search(db)
+                search.put("a", "1", "old", "001", "قلم", "النجم")
+                valid = ("a", "1", "old", "001", "دفتر", "النجم")
+                invalid = ("a", "1", "new", "002", None, "النجم")
+                with self.assertRaises(TypeError):
+                    search.put_many([valid, invalid])
+                self.assertEqual([row[0] for row in search.find("a", "1", "قلم")], ["old"])
+                self.assertEqual(search.find("a", "1", "دفتر"), [])
+                search.put_many([valid, ("a", "1", "new", "002", "حبر", "النجم")])
+                self.assertEqual(search.find("a", "1", "قلم"), [])
+                self.assertEqual([row[0] for row in search.find("a", "1", "دفتر")], ["old"])
+                self.assertEqual([row[0] for row in search.find("a", "1", "حبر")], ["new"])
+
+    def test_index_update_respects_callers_transaction(self):
         db = sqlite3.connect(":memory:")
         self.addCleanup(db.close)
         search = Search(db)
-        search.put("a", "1", "old", "001", "قلم", "النجم")
-        valid = ("a", "1", "old", "001", "دفتر", "النجم")
-        invalid = ("a", "1", "new", "002", None, "النجم")
-        with self.assertRaises(TypeError):
-            search.put_many([valid, invalid])
-        self.assertEqual([row[0] for row in search.find("a", "1", "قلم")], ["old"])
-        self.assertEqual(search.find("a", "1", "دفتر"), [])
-        search.put_many([valid, ("a", "1", "new", "002", "حبر", "النجم")])
+        db.execute("BEGIN")
+        search.put("a", "1", "first", "001", "قلم", "النجم")
+        self.assertEqual(len(search.find("a", "1", "قلم")), 1)
+        db.rollback()
         self.assertEqual(search.find("a", "1", "قلم"), [])
-        self.assertEqual([row[0] for row in search.find("a", "1", "دفتر")], ["old"])
-        self.assertEqual([row[0] for row in search.find("a", "1", "حبر")], ["new"])
 
     def test_fixture(self):
         s=Search(sqlite3.connect(":memory:"))
