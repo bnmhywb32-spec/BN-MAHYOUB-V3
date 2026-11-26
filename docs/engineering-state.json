@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "2282b9d4a65d9a7b0389ba916c9f6f3c5f5e4106",
-  "code_sha": "0776fbad467a53c0a3bfd5daf6b939f2a88fe87b",
+  "last_content_commit": "8193ae8abf51991402f7bfc216a0c6b639ca5d87",
+  "code_sha": "8193ae8abf51991402f7bfc216a0c6b639ca5d87",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -64,9 +64,9 @@
     {
       "name": "python_local_transport_authority_search",
       "status": "pass",
-      "commit": "0776fbad467a53c0a3bfd5daf6b939f2a88fe87b",
+      "commit": "8193ae8abf51991402f7bfc216a0c6b639ca5d87",
       "command": "python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.test_http_transport proofs.sync.offline_authority proofs.search.local_search",
-      "result": "11 tests passed; wrong-company receipts rejected before cursor or queue changes, existing transport ID cannot produce a second local sale. 100 SQLite settlements p95 2.186 ms; verified backup replay sample 2.056 ms; search p95 7.488 ms."
+      "result": "12 passed including barcode precedence, legacy index backfill, and indexed term deletion. Search p95 40.586 ms during the full local run. Settlement p95 3.268 ms."
     },
     {
       "name": "kotlin_web_runtime_local",
@@ -102,6 +102,13 @@
       "run_id": 45820562895,
       "job_id": 139911414841,
       "result": "11 tests passed; CI fixture SQLite settlement p95 0.953 ms; in-memory search p95 10.688 ms."
+    },
+    {
+      "name": "search_index_build_comparison",
+      "status": "pass",
+      "commit": "8193ae8abf51991402f7bfc216a0c6b639ca5d87",
+      "comparison_base": "86f24c8",
+      "result": "One local paired measurement for 10,000 synthetic in-memory items: build 12.895 s before, 0.222 s after. Both retained the indexed prefix query plan. This comparison is within V3 and is not evidence of V2 task speed."
     }
   ],
   "blockers": [
@@ -111,7 +118,7 @@
   ],
   "next_step": "Establish the V2 task baseline and independently review storage limits, remote trust and offline reservation reconciliation. Production and technology approval remain open.",
   "changed_files": [
-    "proofs/platform-runtime/contract.md"
+    "proofs/search/local_search.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
