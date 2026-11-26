@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "13bdfd8aff2ae9d7a01ea2ca26cc2b5ac7160803",
-  "code_sha": "13bdfd8aff2ae9d7a01ea2ca26cc2b5ac7160803",
+  "last_content_commit": "22b6aa367ccb50ec871752e5d68e472851d45e5b",
+  "code_sha": "22b6aa367ccb50ec871752e5d68e472851d45e5b",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -71,27 +71,28 @@
     {
       "name": "python_local_transport_authority_search",
       "status": "pass",
-      "commit": "2b48b8e507ea0ad07d69074a3eba48798b50a3e7",
-      "command": "python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.offline_authority proofs.search.local_search",
-      "result": "6 passed; journal rollback, session revocation and replay from integrity-checked backup verified; sample settlement 1.637 ms and backup + integrity + replay 3.694 ms; search p95 6.644 ms"
+      "commit": "22b6aa367ccb50ec871752e5d68e472851d45e5b",
+      "command": "python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.test_http_transport proofs.sync.offline_authority proofs.search.local_search",
+      "result": "7 passed including loopback HTTP authentication, scope, replay and revocation; sample settlement 1.250 ms; backup + integrity + replay 1.926 ms; search p95 8.297 ms"
+    },
+    {
+      "name": "kotlin_windows_runtime",
+      "status": "pass",
+      "run_id": 45818355923,
+      "job_id": 139903832015,
+      "restriction": "JVM on Windows; two independent process invocations."
     }
   ],
   "blockers": [
     "Run the shared platform runtime and exact-precision contract on Android, Windows and web for both candidates",
-    "Exercise identity enrollment and revocation, reservation recovery, ledger settlement and ordered receipts over a real network; current authenticated assertion is local.",
+    "Exercise remote authenticated transport, identity enrollment, offline reservation release and stale-backup protection; loopback HTTP scope and replay verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Inspect corrected runtime runs while exercising local network transport.",
+  "next_step": "Complete candidate browser runtime coverage; follow Android and Flutter CI outcomes.",
   "changed_files": [
-    ".github/workflows/proof-runtime.yml",
-    "proofs/platform-runtime/android/build.gradle.kts",
-    "proofs/platform-runtime/android/gradle.properties",
-    "proofs/platform-runtime/android/settings.gradle.kts",
-    "proofs/platform-runtime/android/src/androidTest/kotlin/proof/runtime/RuntimeTest.kt",
-    "proofs/platform-runtime/android/src/main/AndroidManifest.xml",
-    "proofs/platform-runtime/flutter_main.dart",
-    "proofs/platform-runtime/test_driver/integration_test.dart",
-    "proofs/platform-runtime/web_reload.py"
+    ".github/workflows/proof-local.yml",
+    "proofs/README.md",
+    "proofs/sync/test_http_transport.py"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
