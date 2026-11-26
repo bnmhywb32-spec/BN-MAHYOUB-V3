@@ -1,6 +1,10 @@
 import java.sql.DriverManager
 import java.nio.file.Files
 import java.util.concurrent.Executors
+fun posting(qty:Long,price:Long):Long {
+ require(qty>0 && price>=0)
+ return java.math.BigInteger.valueOf(qty).multiply(java.math.BigInteger.valueOf(price)).add(java.math.BigInteger.valueOf(500)).divide(java.math.BigInteger.valueOf(1000)).longValueExact()
+}
 class Ledger(val path:String) {
  fun connect()=DriverManager.getConnection("jdbc:sqlite:"+path).also { c -> c.createStatement().use { it.execute("PRAGMA busy_timeout=10000") } }
  fun init(){connect().use { c -> Files.readString(java.nio.file.Path.of("proofs/schema.sql")).split(';').filter{it.isNotBlank()}.forEach { s -> c.createStatement().use{it.execute(s)} } }}
@@ -18,7 +22,7 @@ class Ledger(val path:String) {
  val remaining=c.createStatement().use{it.executeQuery("SELECT qty FROM stock WHERE company='A' AND branch='A1'").use{r->r.next();r.getLong(1)}}
  val doc=java.util.UUID.randomUUID().toString()
  exec("INSERT INTO documents VALUES(?,?)",doc,qty)
- val rev=Math.addExact(Math.multiplyExact(qty,100L),500L)/1000;val cost=Math.addExact(Math.multiplyExact(qty,60L),500L)/1000
+ val rev=posting(qty,100L);val cost=posting(qty,60L)
  for((account,d,cr) in listOf(Triple("cash",rev,0L),Triple("revenue",0L,rev),Triple("cogs",cost,0L),Triple("inventory",0L,cost)))exec("INSERT INTO journal VALUES(?,?,?,?)",doc,account,d,cr)
  exec("INSERT INTO commands VALUES(?,?,?,?)",id,fp,doc,remaining)
  exec("INSERT INTO outbox VALUES(?)",id)
@@ -54,5 +58,17 @@ fun main(){
  check(q.sell("fraction",125)==9875L)
  check(q.scalar("SELECT debit FROM journal WHERE account='cash'")==13L)
  check(q.scalar("SELECT debit FROM journal WHERE account='cogs'")==8L)
+ for ((qty,rev,cost) in listOf(Triple(1L,0L,0L),Triple(5L,1L,0L),Triple(499L,50L,30L),Triple(500L,50L,30L),Triple(999L,100L,60L))) {
+  val file=Files.createTempFile("fraction-boundary",".db")
+  try {
+   val test=Ledger(file.toString());test.init()
+   check(test.sell("boundary",qty)==10000L-qty)
+   check(test.scalar("SELECT debit FROM journal WHERE account='cash'")==rev)
+   check(test.scalar("SELECT debit FROM journal WHERE account='cogs'")==cost)
+   check(test.scalar("SELECT sum(debit-credit) FROM journal")==0L)
+  } finally { Files.deleteIfExists(file) }
+ }
+ check(posting(Long.MAX_VALUE,1000)==Long.MAX_VALUE)
+ check(runCatching{posting(Long.MAX_VALUE,1001)}.exceptionOrNull() is ArithmeticException)
  println("SQLite JVM durable, fractional rounding and backup checks PASS")
 }
