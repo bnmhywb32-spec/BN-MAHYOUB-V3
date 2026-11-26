@@ -30,10 +30,8 @@ class ProofLedger(private val state: ProofState = ProofState()) {
             return previous.second
         }
         require(command.quantityMilli <= state.stockMilli) { "INSUFFICIENT_STOCK" }
-        require(command.quantityMilli % 1_000L == 0L) { "QUANTITY_PRECISION" }
-        val units = command.quantityMilli / 1_000L
-        val revenue = Math.multiplyExact(units, command.expectedUnitPriceMinor)
-        val cost = Math.multiplyExact(units, 60L)
+        val revenue = roundedPosting(command.quantityMilli, command.expectedUnitPriceMinor)
+        val cost = roundedPosting(command.quantityMilli, 60L)
         val lines = listOf(
             JournalLine("cash", revenue, 0L), JournalLine("revenue", 0L, revenue),
             JournalLine("cogs", cost, 0L), JournalLine("inventory", 0L, cost)
@@ -51,7 +49,18 @@ class ProofLedger(private val state: ProofState = ProofState()) {
     }
     fun snapshot(): ProofState = state
 }
+private fun roundedPosting(quantity: Long, price: Long): Long {
+    require(quantity > 0 && price >= 0)
+    return java.math.BigInteger.valueOf(quantity).multiply(java.math.BigInteger.valueOf(price))
+        .add(java.math.BigInteger.valueOf(500)).divide(java.math.BigInteger.valueOf(1000)).longValueExact()
+}
 fun main() {
+    for ((qty, expected) in listOf(1L to 0L, 5L to 1L, 125L to 13L, 499L to 50L, 500L to 50L, 999L to 100L)) {
+        val result = ProofLedger().sell(SaleCommand("fraction", "A", "A1", "PROOF-001", qty, 100, "cashier-A"))
+        check(result.lines[0].debit == expected)
+        check(result.stockMilli == 10000L - qty)
+        check(result.lines.sumOf { it.debit } == result.lines.sumOf { it.credit })
+    }
     val ledger = ProofLedger()
     val c = SaleCommand("cmd-A-1", "A", "A1", "PROOF-001", 2_000, 100, "cashier-A")
     val r = ledger.sell(c)
