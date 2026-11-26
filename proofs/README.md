@@ -28,7 +28,7 @@ No production sales, tax, exchange or pricing policy is adopted by these synthet
 Run from the repository root:
 
 ```sh
-python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.offline_authority proofs.search.local_search
+python3 -B -m unittest -v proofs.sync.test_transport proofs.sync.test_http_transport proofs.sync.offline_authority proofs.search.local_search
 ```
 
-The SQLite authority fixture reserves finite stock or cash per company and device. It settles queued commands atomically, returning the stored receipt after a lost acknowledgement and accepting only contiguous inbox revisions. The test harness issues opaque, revocable device sessions scoped to a company. The sale fixture posts a balanced four-line journal and consumes stock in the same transaction. Tests cover an injected journal failure and replay against an integrity-checked backup. User authentication, release of offline reservations, stale-backup fencing and network transport remain separate acceptance checks.
+The SQLite authority fixture reserves finite stock or cash per company and device. It settles queued commands atomically, returning the stored receipt after a lost acknowledgement and accepting only contiguous inbox revisions. The test harness issues opaque, revocable device sessions scoped to a company. The sale fixture posts a balanced four-line journal and consumes stock in the same transaction. Tests cover an injected journal failure and replay against an integrity-checked backup. User authentication, release of offline reservations, stale-backup fencing and remote transport remain separate acceptance checks. The HTTP test uses a loopback-only server and separate connections for device requests.
