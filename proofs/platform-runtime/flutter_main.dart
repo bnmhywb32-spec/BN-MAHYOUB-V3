@@ -46,7 +46,10 @@ Future<String> proof({String path = 'bn_v3_runtime_proof.db'}) async {
  throw StateError('expected rejection: $reason');
  }
  Future<void> verifyState() async {
- check((await db.rawQuery("SELECT CAST(CAST('9007199254740993' AS INTEGER) + 2 AS TEXT) AS exact_value")).single['exact_value']=='9007199254740995');
+ final row=(await db.rawQuery("SELECT CAST(amount AS TEXT) AS exact_value, typeof(amount) AS storage_type FROM exact_probe WHERE id=1")).single;
+ check(row['storage_type']=='integer' && row['exact_value']=='9007199254740993');
+ final exact=BigInt.parse(row['exact_value'] as String);
+ check((exact+BigInt.from(2)).toString()=='9007199254740995');
  check((await db.query('sales',where:'id=?',whereArgs:['one'])).length==1);
  check(await sell('one',2)==8);
  check((await db.query('stock',where:'company=?',whereArgs:['A'])).first['qty']==8);
@@ -60,6 +63,8 @@ Future<String> proof({String path = 'bn_v3_runtime_proof.db'}) async {
  }
  try{
  await db.execute('CREATE TABLE IF NOT EXISTS proof_complete(id INTEGER PRIMARY KEY)');
+ await db.execute('CREATE TABLE IF NOT EXISTS exact_probe(id INTEGER PRIMARY KEY, amount INTEGER NOT NULL)');
+ await db.execute("INSERT OR IGNORE INTO exact_probe VALUES(1,CAST('9007199254740993' AS INTEGER))");
  final existing=await db.query('proof_complete');
  if(existing.isNotEmpty){
  await verifyState();
