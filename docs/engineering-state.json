@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "6df3ae578ec856d9de171a31aec8e289cc5565a5",
-  "code_sha": "6df3ae578ec856d9de171a31aec8e289cc5565a5",
+  "last_content_commit": "a33b925bba8ee586cb4fda5c567efc89431a496e",
+  "code_sha": "a33b925bba8ee586cb4fda5c567efc89431a496e",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -206,6 +206,12 @@
       "status": "pending",
       "commit": "d5043d549a358a0a9a3acdc00e35ce4089f1adba",
       "result": "Persisted SQLite integer above 2^53, exact text retrieval and application addition, Kotlin sql.js BigInt retrieval. Adapter compatibility and platform CI pending; full financial path not proven."
+    },
+    {
+      "name": "restore_history_fingerprint",
+      "status": "verified",
+      "commit": "a33b925bba8ee586cb4fda5c567efc89431a496e",
+      "result": "21 local Python tests passed. A backup with a modified earlier sale, recalculated balanced journal, unchanged latest receipt and unchanged allocation state is rejected. Receipt, authorization and full ordered history fingerprints are captured in one read transaction. Independent authenticated checkpoint storage remains unverified."
     }
   ],
   "blockers": [
@@ -213,15 +219,11 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify GitHub platform CI. Investigate authenticated history checkpoints and replay-safe recovery while retaining the proof-only gate.",
+  "next_step": "Verify new CI, then continue addressing browser durability and remote trust. CORE-005 and production approval remain open.",
   "changed_files": [
-    ".github/workflows/proof-runtime.yml",
-    "proofs/platform-runtime/chunk_storage_test.py",
-    "proofs/platform-runtime/contract.md",
-    "proofs/platform-runtime/web/src/main/kotlin/WebMain.kt",
-    "proofs/platform-runtime/web/src/main/resources/proof-store.js",
-    "proofs/platform-runtime/web/src/main/resources/proof-worker.js",
-    "proofs/platform-runtime/web_reload.py"
+    "proofs/sync/authority_hub.py",
+    "proofs/sync/test_transport.py",
+    "proofs/README.md"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
