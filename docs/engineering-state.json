@@ -175,16 +175,19 @@
     },
     {
       "name": "durable_download_retry",
-      "status": "pending",
+      "status": "pass",
       "commit": "83a2db51d7b923c34825cb22920a62a5ee8f907a",
       "previous_failed_run": 45827821031,
-      "result": "Kotlin dependency download HTTP 429 before compilation; bounded retry added to both Maven downloads. No test assertions changed."
+      "result": "Both CI runs succeeded after bounded retry; prior HTTP 429 resolved in these runs.",
+      "run_id": 45829182239,
+      "confirmation_run_id": 45829374327
     },
     {
       "name": "incremental_browser_chunk_proof",
       "status": "pending",
       "commit": "286ffa96d1ccbd09745de2cd4cc92f73fb3c94e1",
-      "result": "64 KiB changed-chunk IndexedDB publication with atomic metadata and legacy snapshot fallback; existing browser abort/reload harness pending. Full SQLite export and read remain; no latency improvement claimed."
+      "result": "Platform runtime in progress; changed-byte benchmark and corruption detection remain unverified.",
+      "run_id": 45829374333
     }
   ],
   "blockers": [
@@ -192,7 +195,7 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify browser runtime CI; add successful changed-snapshot publication and byte/latency comparison before claiming improvement. Verify durable retry CI.",
+  "next_step": "Resolve fractional rounding contract mismatch and exact numeric transport; verify chunk runtime and add changed-write integrity/benchmark tests. Production gates remain open.",
   "changed_files": [
     "proofs/platform-runtime/web/src/main/resources/proof-store.js"
   ],
