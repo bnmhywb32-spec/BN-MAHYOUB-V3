@@ -3,8 +3,8 @@
   "repository": "bnmhywb32-spec/BN-MAHYOUB-V3",
   "branch": "proof/isolated-technology-2026-11-25",
   "base_sha": "6388fcd4f9050e98e5108d1551c0f481452563e8",
-  "last_content_commit": "9c55b35a2641cbcf7702b4f233d642e274a00e38",
-  "code_sha": "9c55b35a2641cbcf7702b4f233d642e274a00e38",
+  "last_content_commit": "185b54793d2ce92307e19ca414f80987de9701d1",
+  "code_sha": "185b54793d2ce92307e19ca414f80987de9701d1",
   "kind": "isolated_proof",
   "state": "unverified",
   "scope": "Comparative native SQLite and isolated local transport proofs with synthetic data; platform runtime and technology gates remain open",
@@ -240,6 +240,12 @@
       "status": "verified",
       "commit": "9c55b35a2641cbcf7702b4f233d642e274a00e38",
       "result": "24 local tests passed. Recovery verifies staged SQLite under BEGIN IMMEDIATE and resumes using the same connection; missing path is rejected without creating a database. Secure staging and ongoing concurrent access remain separate requirements."
+    },
+    {
+      "name": "authenticated_recovery_checkpoint",
+      "status": "verified",
+      "commit": "185b54793d2ce92307e19ca414f80987de9701d1",
+      "result": "25 local tests passed. A separate HMAC fixture rejects modified, cross-company, wrong-key and previously valid stale checkpoints, then verifies recovery and the revoked device. Trusted latest signature and signing key are injected by the test; real independent provisioning remains open."
     }
   ],
   "blockers": [
@@ -247,10 +253,11 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify recovery CI, assess secure checkpoint handling and per-operation consistency, then continue V2 task comparison and hardware gates.",
+  "next_step": "Verify CI and continue examining independently provisioned device identity, checkpoint key lifecycle, failure recovery and V2 task comparison.",
   "changed_files": [
-    "proofs/sync/authority_hub.py",
-    "proofs/sync/test_transport.py"
+    "proofs/sync/checkpoint_auth.py",
+    "proofs/sync/test_transport.py",
+    "proofs/README.md"
   ],
   "related_review": {
     "source": "Owner-supplied independent review, 2026-11-25",
