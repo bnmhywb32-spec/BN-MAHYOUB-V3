@@ -48,9 +48,9 @@ class AuthorityHub:
         """)
 
     @classmethod
-    def open_verified_backup(cls, path, checkpoints, *, authorization):
+    def open_verified_backup(cls, path, checkpoints, *, authorization, history):
         """Open a staged snapshot only if independently retained receipts are present."""
-        if not authorization or not set(checkpoints) <= set(authorization):
+        if not authorization or set(history) != set(authorization) or not set(checkpoints) <= set(authorization):
             raise ValueError("RECOVERY_CHECKPOINT_REQUIRED")
         uri = Path(path).resolve().as_uri() + "?mode=ro"
         snapshot = sqlite3.connect(uri, uri=True)
@@ -85,6 +85,9 @@ class AuthorityHub:
             ).fetchone() is not None:
                 raise ValueError("RECOVERY_REVISION_GAP")
             cls._verify_recovered_journal(snapshot)
+            for company, expected in history.items():
+                if cls._history_digest(snapshot, company) != expected:
+                    raise ValueError("RECOVERY_HISTORY_MISMATCH")
         finally:
             snapshot.close()
         return cls(path)
@@ -124,6 +127,33 @@ class AuthorityHub:
         ).fetchall()
         data = json.dumps([devices, sessions, balances, grants], separators=(",", ":")).encode()
         return hashlib.sha256(data).hexdigest()
+
+    @staticmethod
+    def _history_digest(db, company):
+        digest = hashlib.sha256()
+        rows = db.execute(
+            "SELECT id, device, revision, payload, received_at FROM operations "
+            "WHERE company=? ORDER BY revision", (company,)
+        )
+        for row in rows:
+            record = json.dumps(row, ensure_ascii=True, separators=(",", ":")).encode()
+            digest.update(len(record).to_bytes(8, "big"))
+            digest.update(record)
+        return digest.hexdigest()
+
+    def recovery_checkpoint(self, company):
+        """Capture one company's latest receipt and trust fingerprints in one read transaction."""
+        with self.db:
+            self.db.execute("BEGIN")
+            row = self.db.execute(
+                "SELECT id, payload, revision, received_at FROM operations "
+                "WHERE company=? ORDER BY revision DESC LIMIT 1", (company,)
+            ).fetchone()
+            return {
+                "receipt": self._receipt(company, *row) if row else None,
+                "authorization": self._authorization_digest(self.db, company),
+                "history": self._history_digest(self.db, company),
+            }
 
     def authorization_checkpoint(self, company):
         """Capture authorization and reserved balances for independent retention."""

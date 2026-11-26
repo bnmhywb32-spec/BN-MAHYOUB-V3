@@ -130,11 +130,13 @@ class TransportProof(unittest.TestCase):
         first = self.hub.submit(session, "sale", payload)
         settlement_ms = (time.perf_counter() - start) * 1000
         self.assertEqual(first["revision"], 1)
-        authorization = {"A": self.hub.authorization_checkpoint("A")}
+        checkpoint = self.hub.recovery_checkpoint("A")
+        authorization = {"A": checkpoint["authorization"]}
+        history = {"A": checkpoint["history"]}
         with self.assertRaisesRegex(ValueError, "^RECOVERY_CHECKPOINT_MISMATCH$"):
-            AuthorityHub.open_verified_backup(stale, {"A": first}, authorization=authorization)
+            AuthorityHub.open_verified_backup(stale, {"A": first}, authorization=authorization, history=history)
         with self.assertRaisesRegex(ValueError, "^RECOVERY_CHECKPOINT_REQUIRED$"):
-            AuthorityHub.open_verified_backup(stale, {}, authorization={})
+            AuthorityHub.open_verified_backup(stale, {}, authorization={}, history={})
         backup_path = self.path / "restored.db"
         start = time.perf_counter()
         backup = sqlite3.connect(backup_path)
@@ -143,7 +145,7 @@ class TransportProof(unittest.TestCase):
             self.assertEqual(backup.execute("PRAGMA integrity_check").fetchone(), ("ok",))
         finally:
             backup.close()
-        restored = AuthorityHub.open_verified_backup(backup_path, {"A": first}, authorization=authorization)
+        restored = AuthorityHub.open_verified_backup(backup_path, {"A": first}, authorization=authorization, history=history)
         self.addCleanup(restored.db.close)
         retry = restored.submit(session, "sale", payload)
         restore_ms = (time.perf_counter() - start) * 1000
@@ -258,7 +260,8 @@ class TransportProof(unittest.TestCase):
         self.hub.revoke_device("A", "seller")
         with self.assertRaisesRegex(ValueError, "^RECOVERY_AUTHORIZATION_MISMATCH$"):
             AuthorityHub.open_verified_backup(
-                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")}
+                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")},
+                history={"A": self.hub.recovery_checkpoint("A")["history"]}
             )
 
     def test_restore_requires_authorization_for_companies_without_sales(self):
@@ -268,10 +271,12 @@ class TransportProof(unittest.TestCase):
             self.hub.db.backup(snapshot)
         with self.assertRaisesRegex(ValueError, "^RECOVERY_CHECKPOINT_REQUIRED$"):
             AuthorityHub.open_verified_backup(
-                path, {}, authorization={"A": self.hub.authorization_checkpoint("A")}
+                path, {}, authorization={"A": self.hub.authorization_checkpoint("A")},
+                history={"A": self.hub.recovery_checkpoint("A")["history"]}
             )
         with closing(AuthorityHub.open_verified_backup(
-            path, {}, authorization={"B": self.hub.authorization_checkpoint("B")}
+            path, {}, authorization={"B": self.hub.authorization_checkpoint("B")},
+            history={"B": self.hub.recovery_checkpoint("B")["history"]}
         ).db):
             pass
 
@@ -286,7 +291,8 @@ class TransportProof(unittest.TestCase):
         self.hub.allocate("A", "offline", "stock", 1)
         with self.assertRaisesRegex(ValueError, "^RECOVERY_AUTHORIZATION_MISMATCH$"):
             AuthorityHub.open_verified_backup(
-                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")}
+                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")},
+                history={"A": self.hub.recovery_checkpoint("A")["history"]}
             )
 
     def test_restore_rejects_sqlite_valid_snapshot_with_missing_journal_entry(self):
@@ -302,7 +308,8 @@ class TransportProof(unittest.TestCase):
             self.assertEqual(snapshot.execute("PRAGMA integrity_check").fetchone(), ("ok",))
         with self.assertRaisesRegex(ValueError, "^RECOVERY_JOURNAL_MISMATCH$"):
             AuthorityHub.open_verified_backup(
-                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")}
+                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")},
+                history={"A": self.hub.recovery_checkpoint("A")["history"]}
             )
 
     def test_restore_rejects_revision_gap_despite_latest_receipt_and_balanced_journal(self):
@@ -321,7 +328,34 @@ class TransportProof(unittest.TestCase):
             self.assertEqual(snapshot.execute("PRAGMA integrity_check").fetchone(), ("ok",))
         with self.assertRaisesRegex(ValueError, "^RECOVERY_REVISION_GAP$"):
             AuthorityHub.open_verified_backup(
-                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")}
+                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")},
+                history={"A": self.hub.recovery_checkpoint("A")["history"]}
+            )
+
+    def test_restore_rejects_modified_prior_sale_with_balanced_journal(self):
+        self.hub.seed("A", "stock", 2)
+        self.hub.allocate("A", "seller", "stock", 2)
+        token = self.hub.issue_session("A", "seller", can_submit=True)
+        sale = {"kind": "sale", "resource": "stock", "amount": 1}
+        self.hub.submit(token, "first", sale)
+        self.hub.submit(token, "second", sale)
+        checkpoint = self.hub.recovery_checkpoint("A")
+        path = self.path / "altered-history.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+            with snapshot:
+                snapshot.execute(
+                    "UPDATE operations SET payload=? WHERE company=? AND id=?",
+                    ('{"amount":2,"kind":"sale","resource":"stock"}', "A", "first"),
+                )
+                snapshot.execute("UPDATE journal SET amount=amount*2 WHERE operation_id='first'")
+            self.assertEqual(snapshot.execute("PRAGMA integrity_check").fetchone(), ("ok",))
+            self.assertEqual(snapshot.execute("SELECT SUM(amount) FROM journal").fetchone(), (0,))
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_HISTORY_MISMATCH$"):
+            AuthorityHub.open_verified_backup(
+                path, {"A": checkpoint["receipt"]},
+                authorization={"A": checkpoint["authorization"]},
+                history={"A": checkpoint["history"]},
             )
 
 
