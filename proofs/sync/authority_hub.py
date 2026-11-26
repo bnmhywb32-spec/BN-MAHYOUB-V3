@@ -47,13 +47,14 @@ class AuthorityHub:
         """)
 
     @classmethod
-    def open_verified_backup(cls, path, checkpoints):
+    def open_verified_backup(cls, path, checkpoints, *, authorization):
         """Open a staged snapshot only if independently retained receipts are present."""
-        if not checkpoints:
+        if not checkpoints or set(authorization) != set(checkpoints):
             raise ValueError("RECOVERY_CHECKPOINT_REQUIRED")
         uri = Path(path).resolve().as_uri() + "?mode=ro"
         snapshot = sqlite3.connect(uri, uri=True)
         try:
+            snapshot.execute("BEGIN")
             if snapshot.execute("PRAGMA integrity_check").fetchall() != [("ok",)]:
                 raise ValueError("RECOVERY_CORRUPT")
             for company, expected in checkpoints.items():
@@ -64,9 +65,30 @@ class AuthorityHub:
                 ).fetchone()
                 if row is None or cls._receipt(company, *row) != expected:
                     raise ValueError("RECOVERY_CHECKPOINT_MISMATCH")
+                if cls._authorization_digest(snapshot, company) != authorization[company]:
+                    raise ValueError("RECOVERY_AUTHORIZATION_MISMATCH")
         finally:
             snapshot.close()
         return cls(path)
+
+    @staticmethod
+    def _authorization_digest(db, company):
+        devices = db.execute(
+            "SELECT device, enabled FROM devices WHERE company=? ORDER BY device", (company,)
+        ).fetchall()
+        sessions = db.execute(
+            "SELECT s.digest, s.device, w.digest IS NOT NULL FROM sessions AS s "
+            "LEFT JOIN session_writers AS w ON w.digest=s.digest "
+            "WHERE s.company=? ORDER BY s.digest", (company,)
+        ).fetchall()
+        data = json.dumps([devices, sessions], separators=(",", ":")).encode()
+        return hashlib.sha256(data).hexdigest()
+
+    def authorization_checkpoint(self, company):
+        """Capture authorization state for independent retention beside a receipt."""
+        with self.db:
+            self.db.execute("BEGIN")
+            return self._authorization_digest(self.db, company)
 
     def seed(self, company, resource, amount):
         with self.db:

@@ -130,10 +130,11 @@ class TransportProof(unittest.TestCase):
         first = self.hub.submit(session, "sale", payload)
         settlement_ms = (time.perf_counter() - start) * 1000
         self.assertEqual(first["revision"], 1)
+        authorization = {"A": self.hub.authorization_checkpoint("A")}
         with self.assertRaisesRegex(ValueError, "^RECOVERY_CHECKPOINT_MISMATCH$"):
-            AuthorityHub.open_verified_backup(stale, {"A": first})
+            AuthorityHub.open_verified_backup(stale, {"A": first}, authorization=authorization)
         with self.assertRaisesRegex(ValueError, "^RECOVERY_CHECKPOINT_REQUIRED$"):
-            AuthorityHub.open_verified_backup(stale, {})
+            AuthorityHub.open_verified_backup(stale, {}, authorization={})
         backup_path = self.path / "restored.db"
         start = time.perf_counter()
         backup = sqlite3.connect(backup_path)
@@ -142,7 +143,7 @@ class TransportProof(unittest.TestCase):
             self.assertEqual(backup.execute("PRAGMA integrity_check").fetchone(), ("ok",))
         finally:
             backup.close()
-        restored = AuthorityHub.open_verified_backup(backup_path, {"A": first})
+        restored = AuthorityHub.open_verified_backup(backup_path, {"A": first}, authorization=authorization)
         self.addCleanup(restored.db.close)
         retry = restored.submit(session, "sale", payload)
         restore_ms = (time.perf_counter() - start) * 1000
@@ -245,6 +246,20 @@ class TransportProof(unittest.TestCase):
             recovered.acknowledge("old", dict(response, received_at="changed"))
         stored = recovered.db.execute("SELECT response FROM receipts").fetchone()[0]
         self.assertNotIn('"company"', stored)
+
+    def test_restore_cannot_resurrect_a_session_after_the_last_sale(self):
+        self.hub.seed("A", "stock", 1)
+        self.hub.allocate("A", "seller", "stock", 1)
+        token = self.hub.issue_session("A", "seller", can_submit=True)
+        receipt = self.hub.submit(token, "one", {"kind": "sale", "resource": "stock", "amount": 1})
+        path = self.path / "pre-revocation.db"
+        with closing(sqlite3.connect(path)) as snapshot:
+            self.hub.db.backup(snapshot)
+        self.hub.revoke_device("A", "seller")
+        with self.assertRaisesRegex(ValueError, "^RECOVERY_AUTHORIZATION_MISMATCH$"):
+            AuthorityHub.open_verified_backup(
+                path, {"A": receipt}, authorization={"A": self.hub.authorization_checkpoint("A")}
+            )
 
 
 if __name__ == "__main__":
