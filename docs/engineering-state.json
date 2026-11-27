@@ -97,7 +97,7 @@
       "name": "flutter_web_tabs_ci",
       "status": "pass",
       "commit": "805e45071bbbde23c37c71160b6d9dfe30d31920",
-      "restriction": "Same contention harness configured on Flutter; pending GitHub Actions.",
+      "restriction": "Historical two-tab replay fixture passed; not proof of competing independent sales for the final unit.",
       "run_id": 45822498217,
       "job_id": 139918070031,
       "result": "Chromium first load and full reload passed. Two tabs queued behind one Web Lock; one seeded and one replayed the stored sale."
@@ -160,7 +160,8 @@
       "status": "pass",
       "run_id": 45827589961,
       "commit": "9292d82b5990deb33838437f65e52a9dbded6d16",
-      "result": "All six jobs succeeded."
+      "result": "All six jobs succeeded.",
+      "restriction": "Historical six-job success; does not establish full equivalent runtime acceptance or independent-device shared authority."
     },
     {
       "name": "kotlin_cached_offline_boot",
@@ -264,7 +265,7 @@
       "name": "authorized_branch_search",
       "status": "verified",
       "commit": "13e537e495a4a7201b41f0bc12d8f2fb98f8d288",
-      "result": "33 local tests passed. Search derives company/device from session and validates branch grant in the same SQLite transaction. Tests cover revoked access, separate companies and databases, revocation concurrent with a read, scope recovery and old backups. Administrative grants and user identity remain synthetic; platform integration and CI pending.",
+      "result": "33 local tests passed. Search derives company/device from session and validates branch grant in the same SQLite transaction. Tests cover revoked access, separate companies and databases, revocation concurrent with a read, scope recovery and old backups. Administrative grants and user identity remain synthetic; platform integration remains open; recorded CI run requires evidence inspection.",
       "run_id": 45870953708,
       "job_id": 140085922045
     },
@@ -281,6 +282,14 @@
       "status": "verified",
       "commit": "790924f2840cde2278b94ab33cfdda6f68f67320",
       "result": "38 local tests passed. A real loopback mutual-TLS fixture binds a verified client certificate to a device session, scoped search and sale. Wrong-device and missing client certificates, unbound sessions, revoked certificates and replay after reenrollment reject. Revocation serializes with sale; old certificate state is fenced during restore. Generated CA, enrollment and key custody are test fixtures; remote deployment and CI pending."
+    },
+    {
+      "name": "codex_review_baseline",
+      "status": "verified",
+      "commit": "c28ccbd91c8849168bcfa27ace9c08e06ddd9579",
+      "source": "Owner-supplied Codex review",
+      "result": "Native JVM and Dart passed; 6/6 builds are not runtime evidence. Queue/quota 1/1 and search 2/2 passed; in-memory search p95 5.890 ms. HTTP blocked. Platform equivalence, shared authority and CORE-005 remain open.",
+      "restriction": "Historical supplied review, not a new execution or final signoff."
     }
   ],
   "blockers": [
@@ -288,7 +297,7 @@
     "Exercise user enrollment, branch-scoped and remote trust, release of offline reservations, recovery of revocation state, and production-grade independent checkpoints. Local auth, no oversell, settlement and stale-known-receipt rejection verified.",
     "CORE-005 partial; production prohibited"
   ],
-  "next_step": "Verify mutual TLS CI, then continue secure production enrollment and branch-scoped financial proof within existing design gates.",
+  "next_step": "Inspect exact rejection codes and independent-device final-unit contention; verify mutual TLS CI when evidence is available. Keep production enrollment outside isolated proof.",
   "changed_files": [
     "proofs/README.md",
     "proofs/search/scoped_search.py",
